@@ -13,6 +13,7 @@ cloner/
 
 test.py
 test/
+python_exploration_test/
 transboost/test/
 
 results/
