@@ -1,11 +1,11 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import pickle as pkl
 
 import sys, os
 sys.path.append(os.getcwd())
 
-import pickle as pkl
 from sklearn.utils.validation import check_is_fitted
 from sklearn.utils import check_array
 from sklearn.preprocessing import StandardScaler
@@ -35,6 +35,9 @@ try:
     from transboost.utils import identity_func
 except ModuleNotFoundError:
     from utils import identity_func
+
+from mnist import mnist_path
+from cifar10 import cifar10_path
 
 
 def visualize_mnist(X, Y):
@@ -196,10 +199,10 @@ class MNISTDataset(ImageDataset):
         super().__init__(Xtr, Ytr, Xts, Yts, shape)
 
     @staticmethod
-    def load(filename='mnist.pkl', filepath='./transboost/data/mnist/preprocessed/'):
+    def load(filename='mnist.pkl', filepath=os.path.join(mnist_path, 'preprocessed/')):
         return ImageDataset.load(filename, filepath)
 
-    def save(self, filename='mnist.pkl', filepath='./transboost/data/mnist/preprocessed/'):
+    def save(self, filename='mnist.pkl', filepath=os.path.join(mnist_path, 'preprocessed/')):
         super().save(filename, filepath)
 
 
@@ -208,10 +211,10 @@ class CIFAR10Dataset(ImageDataset):
         super().__init__(Xtr, Ytr, Xts, Yts, shape)
 
     @staticmethod
-    def load(filename='cifar10.pkl', filepath='./transboost/data/cifar10/preprocessed/'):
+    def load(filename='cifar10.pkl', filepath=os.path.join(cifar10_path, 'preprocessed/')):
         return ImageDataset.load(filename, filepath)
 
-    def save(self, filename='cifar10.pkl', filepath='./transboost/data/cifar10/preprocessed/'):
+    def save(self, filename='cifar10.pkl', filepath=os.path.join(cifar10_path, 'preprocessed/')):
         super().save(filename, filepath)
 
 

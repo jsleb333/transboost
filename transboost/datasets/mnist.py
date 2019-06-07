@@ -14,6 +14,7 @@ try:
     from datasets_path import path_to
 except:
     path_to = {'mnist':"transboost/data/mnist/"}
+mnist_path = path_to['mnist']
 mnist_raw = os.path.join(path_to['mnist'], 'raw/')
 
 # File paths, names and format

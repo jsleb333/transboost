@@ -11,6 +11,7 @@ try:
     from datasets_path import path_to
 except:
     path_to = {'cifar10':"transboost/data/cifar10/"}
+cifar10_path = path_to['cifar10']
 cifar10_raw = os.path.join(path_to['cifar10'], 'raw/')
 
 
