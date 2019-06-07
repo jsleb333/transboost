@@ -39,7 +39,6 @@ This project relies on the following `Python` libraries:
 - torchvision (used in `./quadboost/weak_learner/random_convolution.py`)
 - scikit-image (optional, used in `./quadboost/mnist_ideals/ideal_preprocessing.py`)
 - tblib (optional, used in `./quadboost/utils/multiprocessing_utils.py`)
-- colorama (optional, used in `./quadboost/utils/timed.py`)
 
 Prerequistes can be install by executing the following line in the terminal:
 

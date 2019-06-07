@@ -6,7 +6,8 @@ from transboost.label_encoder import LabelEncoder, OneHotEncoder, AllPairsEncode
 from transboost.weak_learner import *
 from transboost.callbacks import *
 from transboost.datasets import MNISTDataset, CIFAR10Dataset
-from transboost.utils import parse, timed
+from transboost.utils import parse
+from graal_utils import timed
 
 
 @timed

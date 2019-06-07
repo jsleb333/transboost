@@ -6,17 +6,18 @@ from torch import nn
 from torch.nn import functional as F
 import warnings
 import matplotlib.pyplot as plt
+from graal_utils import timed
 
 import sys, os
 sys.path.append(os.getcwd())
 
 try:
     from transboost.weak_learner import _WeakLearnerBase, _Cloner
-    from transboost.utils import timed, identity_func, RandomAffine
+    from transboost.utils import identity_func, RandomAffine
     from transboost.utils import make_fig_axes
 except ModuleNotFoundError:
     from weak_learner import _WeakLearnerBase, _Cloner
-    from utils import timed, identity_func, RandomAffine
+    from utils import identity_func, RandomAffine
     from utils import make_fig_axes
 
 

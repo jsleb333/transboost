@@ -6,7 +6,8 @@ from quadboost.label_encoder import LabelEncoder, OneHotEncoder, AllPairsEncoder
 from quadboost.weak_learner import *
 from quadboost.callbacks import *
 from quadboost.datasets import MNISTDataset, CIFAR10Dataset
-from quadboost.utils import parse, timed
+from quadboost.utils import parse
+from graal_utils import timed
 from quadboost.data_preprocessing.data_augmentation import extend_mnist
 from quadboost.weak_learner.random_convolution import plot_images
 

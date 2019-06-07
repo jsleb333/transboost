@@ -3,6 +3,7 @@ import pickle as pkl
 from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
 import logging
+from graal_utils import timed
 
 import sys, os
 sys.path.append(os.getcwd())

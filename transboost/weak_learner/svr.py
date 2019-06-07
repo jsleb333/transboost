@@ -1,13 +1,12 @@
 import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.svm import LinearSVR
+from graal_utils import timed
 
 try:
     from transboost.weak_learner import _WeakLearnerBase
-    from transboost.utils import timed
 except ModuleNotFoundError:
     from weak_learner import _WeakLearnerBase
-    from utils import timed
 
 class MultidimSVR(_WeakLearnerBase):
     """
