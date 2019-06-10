@@ -2,13 +2,17 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle as pkl
+import logging
 
 import sys, os
 sys.path.append(os.getcwd())
 
+from transboost.weak_learner import RandomConvolution
 from sklearn.utils.validation import check_is_fitted
 from sklearn.utils import check_array
 from sklearn.preprocessing import StandardScaler
+
+
 def transform(self, X, copy=None): # Monkey patch the dtype of scikit-learn to np.float32 instead of np.float64 (fix for conflict with torchvision transformations)
     """Perform standardization by centering and scaling
 
@@ -229,6 +233,42 @@ def _generate_cifar10_dataset():
     print(Xtr.shape, Xts.shape)
     dataset = CIFAR10Dataset(Xtr, Ytr, Xts, Yts)
     dataset.save()
+
+
+def get_train_valid_test_bank(dataset='mnist', valid=0, center=False, reduce=False, shuffle=True, n_examples=60000,
+                              bank_ratio=0.05):
+        if 'mnist' in dataset:
+            data = MNISTDataset.load(dataset + '.pkl')
+        elif 'cifar' in dataset:
+            data = CIFAR10Dataset.load(dataset + '.pkl')
+
+        (Xtr, Ytr), (X_val, Y_val), (Xts, Yts) = data.\
+            get_train_valid_test(valid=valid, center=center, reduce=reduce, shuffle=shuffle)
+        Xtr, Ytr = Xtr[:n_examples], Ytr[:n_examples]
+        data.fit_scaler(Xtr, center=center, reduce=reduce)
+        Xtr, Ytr = data.transform_data(Xtr.reshape(Xtr.shape[0], -1), Ytr)
+        Xts, Yts = data.transform_data(Xts.reshape(Xts.shape[0], -1), Yts)
+        if valid:
+            X_val, Y_val = data.transform_data(X_val.reshape(X_val.shape[0], -1), Y_val)
+        else:
+            X_val, Y_val = Xts, Yts
+
+        Xtr = RandomConvolution.format_data(Xtr)
+        X_val = RandomConvolution.format_data(X_val)
+        Xts = RandomConvolution.format_data(Xts)
+        logging.info(f'Loaded dataset: {dataset} (center: {center}, reduce: {reduce})')
+        logging.info(f'Number of examples - train: {len(Xtr)}, valid: {len(X_val)}, test: {len(Xts)}')
+
+        if 0 < bank_ratio < 1:
+            bank_size = int(n_examples * bank_ratio)
+            filter_bank = Xtr[:bank_size]
+            Xtr, Ytr = Xtr[bank_size:], Ytr[bank_size:]
+            logging.info(f'Bank size: {bank_size}')
+        else:
+            raise ValueError(f'Invalid bank_ratio {bank_ratio}.')
+        return (Xtr, Ytr), (X_val, Y_val), (Xts, Yts), filter_bank
+
+
 
 if __name__ == '__main__':
     from mnist import load_mnist
