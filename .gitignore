@@ -1,5 +1,7 @@
 .vscode/
 .vs/
+.idea/*
+env/*
 transboost.code-workspace
 
 __pycache__/
@@ -11,6 +13,7 @@ transboost/datasets/datasets_path.py
 
 cloner/
 
+python_exploration_test/
 test.py
 test/
 python_exploration_test/

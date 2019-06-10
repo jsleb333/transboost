@@ -37,8 +37,8 @@ try:
     from transboost.datasets.cifar10 import cifar10_path
 except ModuleNotFoundError:
     from utils import identity_func
-    from mnist import mnist_path
-    from cifar10 import cifar10_path
+    from .mnist import mnist_path
+    from .cifar10 import cifar10_path
 
 
 def visualize_mnist(X, Y):
