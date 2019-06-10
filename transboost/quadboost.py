@@ -141,6 +141,10 @@ class _QuadBoost:
             else:
                 self.callbacks.append(BreakOnMaxStepCallback(max_round_number))
 
+        for callback in self.callbacks:
+            if isinstance(callback, ModelCheckpoint):
+                callback.resume_fit = True
+
         encoded_Y, weights = self.encoder.encode_labels(Y)
         residue = encoded_Y - self.f0 - self.predict_encoded(X)
 
@@ -203,12 +207,6 @@ class _QuadBoost:
             risk = np.sum(W * (encoded_Y - self.f0 - encoded_Y_pred)**2)
 
         return accuracy if not return_risk else (accuracy, risk)
-
-    @staticmethod
-    def load(filename):
-        with open(filename, 'rb') as file:
-            model = pkl.load(file)
-        return model
 
 
 class QuadBoostMH(_QuadBoost):
@@ -381,7 +379,7 @@ def main():
 
     ### Fitting the model
     qb = QuadBoostMHCR(weak_learner, encoder=encoder, dampening=1)
-    qb.fit(X, Y, max_round_number=10, patience=10,
+    qb.fit(X, Y, max_round_number=3, patience=10,
             X_val=X_val, Y_val=Y_val,
             callbacks=callbacks,
             # n_jobs=1, sorted_X=sorted_X, sorted_X_idx=sorted_X_idx,
@@ -390,7 +388,7 @@ def main():
     print(f'Test accuracy on best model: {qb.evaluate(Xts, Yts):.3%}')
     print(f'Test accuracy on last model: {qb.evaluate(Xts, Yts, mode="last"):.3%}')
     ### Or resume fitting a model
-    # qb = QuadBoostMHCR.load('results/test_3.ckpt')
+    # qb = ModelCheckpoint.load_model('results/test_3')
     # qb.resume_fit(X, Y,
     #               X_val=Xts, Y_val=Yts,
     #               max_round_number=5,
