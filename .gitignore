@@ -1,5 +1,7 @@
 .vscode/
 .vs/
+.idea/*
+env/*
 transboost.code-workspace
 
 __pycache__/
