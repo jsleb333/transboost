@@ -369,7 +369,7 @@ def main():
     # filename = 'haar_onehot_ds_'
     # filename = 'ideal_mnist_ds_'
     filename = 'test'
-    ckpt = ModelCheckpoint(filename=filename+'_{round}.ckpt', dirname='./results', save_last=True)
+    ckpt = ModelCheckpoint(filename=filename+'_{round}', dirname='./results')
     logger = CSVLogger(filename=filename+'_log.csv', dirname='./results/log')
     zero_risk = BreakOnZeroRiskCallback()
     tracker = BestRoundTrackerCallback(quantity='valid_acc', monitor='max')
