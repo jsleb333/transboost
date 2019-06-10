@@ -4,9 +4,24 @@ sys.path.append(os.getcwd())
 
 
 try:
-    from quadboost.callbacks import PeriodicSaveCallback, PickleSaveMixin, Callback
+    from transboost.callbacks import PeriodicSaveCallback, PickleSaveMixin, Callback
 except ModuleNotFoundError:
     from callbacks import PeriodicSaveCallback, PickleSaveMixin
+
+
+class ModelPickler:
+    def __init__(self, filename, filepath='.'):
+        pass
+
+    def save_model(self, ):
+        pass
+
+    def save_update(self, update):
+        pass
+
+    @staticmethod
+    def load_model(self, filename='.'):
+        pass
 
 
 class ModelCheckpoint(Callback):
