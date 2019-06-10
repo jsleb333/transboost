@@ -1,10 +1,9 @@
 import pytest
-import numpy as np
 import os, sys
 sys.path.append(os.getcwd())
 
-from transboost.datasets import ImageDataset
+from transboost.callbacks import Callback, CallbackList
 
 
-class TestImageDataset:
+class TestCallbackList:
     pass

@@ -13,8 +13,10 @@ transboost/datasets/datasets_path.py
 
 cloner/
 
+python_exploration_test/
 test.py
 test/
+python_exploration_test/
 transboost/test/
 
 results/

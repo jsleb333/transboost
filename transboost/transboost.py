@@ -29,13 +29,12 @@ except ModuleNotFoundError:
     from .utils import *
     from .quadboost import BoostingRound
 
-from transboost import QuadBoostMH, QuadBoostMHCR
+from quadboost import QuadBoostMH, QuadBoostMHCR
 
 
 class TransBoost(QuadBoostMHCR):
     """
-    quadboostMHCR, but with a twist: every τ steps, the previous weak learners must provide a set of convolutional
-    filters to apply to X before resuming the training.
+    QuadBoostMHCR, but with a twist: every τ steps, the previous weak learners must provide a set of convolutional filters to apply to X before resuming the training.
 
     The weak learner should be able to choose a number of good filters to give to TransBoost. To do so, the weak learner
      should define a 'select_filters()' method which returns a torch.Tensor of shape (some_number_of_filters, n_channels,
