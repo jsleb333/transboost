@@ -5,46 +5,27 @@ from transboost.transboost import TransBoost
 from transboost.label_encoder import LabelEncoder, OneHotEncoder, AllPairsEncoder
 from transboost.weak_learner import *
 from transboost.callbacks import *
-from transboost.datasets import MNISTDataset, CIFAR10Dataset
+from transboost.datasets import get_train_valid_test_bank, MNISTDataset, CIFAR10Dataset
 from transboost.utils import parse
 from graal_utils import timed
 
 
 @timed
 @parse
-def main(m=60_000, val=10_000, da=0, dataset='mnist', center=True, reduce=True, encodings='onehot', wl='rccsparseridge', n_layers=3, n_filters_per_layer=[100], top_k=5, patience=1000, resume=0, n_filters=100, fs=5, fsh=0, locality=4, init_filters='from_bank', bank_ratio=.05, fn='c', seed=101, nl='maxpool', maxpool=8, device='cpu', margin=2):
+def main(m=60_000, val=10_000, da=0, dataset='mnist', center=True, reduce=True, encodings='onehot', wl='rccsparseridge',
+         n_layers=3, n_filters_per_layer=[100], top_k=5, patience=1000, resume=0, n_filters=100, fs=5, fsh=0,
+         locality=4,  bank_ratio=.05, fn='c', seed=101, nl='maxpool', maxpool=8, device='cpu', margin=2,
+         max_round=1000):
     print(n_filters_per_layer)
     if seed:
         torch.manual_seed(seed)
         np.random.seed(seed)
 
-    ### Data loading
-    if 'mnist' in dataset:
-        data = MNISTDataset.load(dataset+'.pkl')
-    elif 'cifar' in dataset:
-        data = CIFAR10Dataset.load(dataset+'.pkl')
+    (Xtr, Ytr), (X_val, Y_val), (Xts, Yts), filter_bank = \
+        get_train_valid_test_bank(
+            dataset='mnist', valid=val, center=False, reduce=False, shuffle=seed, n_examples=m, bank_ratio=bank_ratio)
 
-    (Xtr, Ytr), (X_val, Y_val), (Xts, Yts) = data.get_train_valid_test(valid=val, center=False, reduce=False, shuffle=seed)
-    Xtr, Ytr = Xtr[:m], Ytr[:m]
-    if da:
-        logging.info(f'Adding {da} examples with data augmentation.')
-        Xtr, Ytr = extend_mnist(Xtr, Ytr, N=da, degrees=degrees, scale=(1-scale, 1/(1-scale)), shear=shear)
-
-    data.fit_scaler(Xtr, center=center, reduce=reduce)
-    Xtr, Ytr = data.transform_data(Xtr.reshape(Xtr.shape[0],-1), Ytr)
-    Xts, Yts = data.transform_data(Xts.reshape(Xts.shape[0],-1), Yts)
-    if val:
-        X_val, Y_val = data.transform_data(X_val.reshape(X_val.shape[0],-1), Y_val)
-    else:
-        X_val, Y_val = Xts, Yts
-
-    Xtr, X_val, Xts = RandomConvolution.format_data(Xtr), RandomConvolution.format_data(X_val), RandomConvolution.format_data(Xts)
-
-    logging.info('Boosting algorithm: TransBoost')
-    logging.info(f'Loaded dataset: {dataset} (center: {center}, reduce: {reduce})')
-    logging.info(f'Number of examples - train: {len(Xtr)}, valid: {len(X_val)}, test: {len(Xts)}')
-
-    ### Choice of encoder
+    # Choice of encoder
     if encodings == 'onehot':
         encoder = OneHotEncoder(Ytr)
     elif encodings == 'allpairs':
@@ -57,20 +38,10 @@ def main(m=60_000, val=10_000, da=0, dataset='mnist', center=True, reduce=True, 
 
     filename = f'transboost-d={dataset}-e={encodings}-wl={wl}'
 
-    ### Choice of weak learner
+    # Choice of weak learner
     kwargs = {}
-    if wl in ['ds', 'decision-stump']:
-        weak_learner = MulticlassDecisionStump()
-        kwargs = dict(zip(('sorted_X', 'sorted_X_idx'), weak_learner.sort_data(Xtr)))
-        kwargs['n_jobs'] = n_jobs
 
-    elif wl in ['dt', 'decision-tree']:
-        weak_learner = MulticlassDecisionTree(max_n_leaves=max_n_leaves)
-        kwargs = dict(zip(('sorted_X', 'sorted_X_idx'), weak_learner.sort_data(Xtr)))
-        kwargs['n_jobs'] = n_jobs
-        filename += f'{max_n_leaves}'
-
-    elif wl == 'ridge':
+    if wl == 'ridge':
         weak_learner = WLThresholdedRidge(threshold=.5)
 
     elif wl.startswith('rcc') or wl.startswith('rlc'):
@@ -93,20 +64,7 @@ def main(m=60_000, val=10_000, da=0, dataset='mnist', center=True, reduce=True, 
             filename += f'-sigmoid'
             activation = torch.sigmoid
 
-        filename += f'-{init_filters}'
-
-        filter_bank = None
-        if init_filters == 'from_bank':
-            if 0 < bank_ratio < 1:
-                bank_size = int(m*bank_ratio)
-                filter_bank = Xtr[:bank_size]
-                Xtr, Ytr = Xtr[bank_size:], Ytr[bank_size:]
-                logging.info(f'Bank size: {bank_size}')
-            else:
-                raise ValueError(f'Invalid bank_size {bank_size}.')
-            filename += f'_br={bank_ratio}'
-        elif init_filters == 'from_data':
-            filter_bank = Xtr
+        filename += '-from_bank'
 
         if fn:
             filename += f'_{fn}'
@@ -140,9 +98,6 @@ def main(m=60_000, val=10_000, da=0, dataset='mnist', center=True, reduce=True, 
             weak_learner = SparseRidgeRC(filters=filters, top_k_filters=top_k)
         elif wl.endswith('ridge'):
             weak_learner = RandomConvolution(filters=filters, weak_learner=Ridge)
-        if wl.endswith('ds'):
-            weak_learner = RandomConvolution(filters=filters, weak_learner=MulticlassDecisionStump)
-            kwargs['n_jobs'] = n_jobs
 
     else:
         raise ValueError(f'Invalid weak learner name: "{wl}".')
