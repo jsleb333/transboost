@@ -32,6 +32,7 @@ def star_function(X, W):
 def g_function(X, W):
     pass
 
+
 def d_function(B):
     pass
 
@@ -118,8 +119,7 @@ class TransBoost:
             filters = self.filters
         for wp, f in zip(wps, filters):
             S = get_multi_layers_random_features(X, f)
-            encoded_Y_pred += wp.predict(X)
-
+            encoded_Y_pred += wp.predict(S)
         return encoded_Y_pred
 
     def evaluate(self, X, Y, return_risk=False, mode='best'):
