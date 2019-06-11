@@ -1,15 +1,14 @@
 import torch
 import logging
 
-from quadboost import QuadBoostMHCR
-from quadboost.label_encoder import LabelEncoder, OneHotEncoder, AllPairsEncoder
-from quadboost.weak_learner import *
-from quadboost.callbacks import *
-from quadboost.datasets import MNISTDataset, CIFAR10Dataset
-from quadboost.utils import parse
+from transboost import QuadBoostMHCR
+from transboost.label_encoder import LabelEncoder, OneHotEncoder, AllPairsEncoder
+from transboost.weak_learner import *
+from transboost.callbacks import *
+from transboost.datasets import MNISTDataset, CIFAR10Dataset
+from transboost.utils import parse
 from graal_utils import timed
-from quadboost.data_preprocessing.data_augmentation import extend_mnist
-from quadboost.weak_learner.random_convolution import plot_images
+from transboost.weak_learner.random_convolution import plot_images
 
 
 @timed
