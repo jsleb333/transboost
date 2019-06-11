@@ -2,9 +2,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle as pkl
-
-import sys, os
-sys.path.append(os.getcwd())
+import warnings
 
 from sklearn.utils.validation import check_is_fitted
 from sklearn.utils import check_array
@@ -30,15 +28,9 @@ def transform(self, X, copy=None): # Monkey patch the dtype of scikit-learn to n
     return X
 StandardScaler.transform = transform
 
-import warnings
-try:
-    from transboost.utils import identity_func
-    from transboost.datasets.mnist import mnist_path
-    from transboost.datasets.cifar10 import cifar10_path
-except ModuleNotFoundError:
-    from utils import identity_func
-    from .mnist import mnist_path
-    from .cifar10 import cifar10_path
+from transboost.utils import identity_func
+from transboost.datasets.mnist import mnist_path
+from transboost.datasets.cifar10 import cifar10_path
 
 
 def visualize_mnist(X, Y):

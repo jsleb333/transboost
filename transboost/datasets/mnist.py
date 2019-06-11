@@ -1,5 +1,4 @@
-import sys, os
-sys.path.append(os.getcwd())
+import os
 import struct
 import numpy as np
 import matplotlib.pyplot as plt
