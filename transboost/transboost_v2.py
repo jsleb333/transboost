@@ -112,7 +112,7 @@ class TransBoost:
 
 
 class TransBoostAlgorithm:
-    n_filters_per_layer: []
+    n_filters_per_layer: list()
 
     def __init__(self, boost_manager, encoder, weak_learner, X, Y, residue, weights, encoded_Y_pred, X_val, Y_val,
                  encoded_Y_val_pred, filter_bank, n_filters_per_layer, n_layers=3,):
