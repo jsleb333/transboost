@@ -3,17 +3,9 @@ from sklearn.metrics import accuracy_score
 import multiprocessing as mp
 from graal_utils import timed
 
-import sys, os
-sys.path.append(os.getcwd())
-
-try:
-    from transboost.weak_learner import _WeakLearnerBase
-    from transboost.utils import split_int, ComparableMixin
-    from transboost.utils.multiprocessing_utils import PicklableExceptionWrapper, SafeQueue, parallel_processes
-except ModuleNotFoundError:
-    from weak_learner import _WeakLearnerBase
-    from utils import split_int, ComparableMixin
-    from utils.multiprocessing_utils import PicklableExceptionWrapper, SafeQueue, parallel_processes
+from transboost.weak_learner import _WeakLearnerBase
+from transboost.utils import split_int, ComparableMixin
+from transboost.utils.multiprocessing_utils import PicklableExceptionWrapper, SafeQueue, parallel_processes
 
 
 class MulticlassDecisionStump(_WeakLearnerBase):
