@@ -108,12 +108,17 @@ class TransBoost:
 
     def predict_encoded(self, X, mode='last'):
         encoded_Y_pred = np.zeros((X.shape[0], self.encoder.encoding_dim)) + self.f0
+
         if mode == 'best':
             best = self.best_round.step_number + 1
-            encoded_Y_pred += self.weak_predictors[:best].predict(X)
+            wps = self.weak_predictors[:best]
+            filters = self.filters[:best]
         else:
-            for predictor in self.weak_predictors:
-                encoded_Y_pred += predictor * predictor.predict(X)
+            wps = self.weak_predictors
+            filters = self.filters
+        for wp, f in zip(wps, filters):
+            S = get_multi_layers_random_features(X, f)
+            encoded_Y_pred += wp.predict(X)
 
         return encoded_Y_pred
 
@@ -151,9 +156,9 @@ class TransBoostAlgorithm:
         with self.boost_manager:  # boost_manager handles callbacks and terminating conditions
             for boosting_round in self.boost_manager:
                 filters.append(self.init_filters())
-                S = self.get_multi_layers_random_features(filters[boosting_round.step_number])
+                S = get_multi_layers_random_features(self.X, filters[boosting_round.step_number])
                 weak_predictor = self.weak_learner().fit(S, self.residue, self.weights, **weak_learner_fit_kwargs)
-                S = self.get_multi_layers_random_features(filters[boosting_round.step_number])
+                S = get_multi_layers_random_features(self.X, filters[boosting_round.step_number])
                 weak_prediction = weak_predictor.predict(S)
                 self.residue -= weak_prediction
                 weak_predictors.append(weak_predictor)
@@ -170,17 +175,6 @@ class TransBoostAlgorithm:
             filters = filters[self.n_filters_per_layer[i]:]
         return W
 
-    def get_multi_layers_random_features(self, filters):
-        S = list()
-        for i in range(self.n_layers):
-            if i == 0:
-                X = self.X
-            else:
-                X = star_function(X, filters[i - 1])
-            S.append(g_function(X, filters[i]))
-        S = torch.cat(S)  # TODO: trouver la bonne fonction pour concatener les tenseurs dans la bonne dim
-        return S
-
     def _evaluate_round(self, boosting_round, weak_prediction, weak_predictor):
         self.encoded_Y_pred += weak_prediction
         Y_pred = self.encoder.decode_labels(self.encoded_Y_pred)
@@ -191,3 +185,15 @@ class TransBoostAlgorithm:
             self.encoded_Y_val_pred += weak_predictor.predict(self.X_val)
             Y_val_pred = self.encoder.decode_labels(self.encoded_Y_val_pred)
             boosting_round.valid_acc = accuracy_score(y_true=self.Y_val, y_pred=Y_val_pred)
+
+
+def get_multi_layers_random_features(examples, filters):
+    S = list()
+    for i in range(len(filters)):
+        if i == 0:
+            X = examples
+        else:
+            X = star_function(X, filters[i - 1])
+        S.append(g_function(X, filters[i]))
+    S = torch.cat(S)  # TODO: trouver la bonne fonction pour concatener les tenseurs dans la bonne dim
+    return S
