@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.ndimage import affine_transform
+import scipy.ndimage as sn
 
 
 class AffineTransform:
@@ -31,8 +31,8 @@ class AffineTransform:
         t_x, t_y = self.translation
 
         affine_matrix = np.array([
-            [scale_x*np.cos(rotation+shear_x), -scale_y*np.sin(rotation+shear_y), t_x],
-            [scale_x*np.sin(rotation+shear_x),  scale_y*np.cos(rotation+shear_y), t_y],
+            [scale_x*np.cos(self.rotation+shear_x), -scale_y*np.sin(self.rotation+shear_y), t_x],
+            [scale_x*np.sin(self.rotation+shear_x),  scale_y*np.cos(self.rotation+shear_y), t_y],
             [                               0,                                 0,   1]
         ])
         center_translation = affine_matrix[:2,:2].dot(self.center)
@@ -72,9 +72,9 @@ class AffineTransform:
 
         if len(input_matrix.shape) == 3:
             transformed = np.array(
-                [affine_transform(ch, self.affine_matrix, **kwargs) for ch in input_matrix])
+                [sn.affine_transform(ch, self.affine_matrix, **kwargs) for ch in input_matrix])
         else:
-            transformed = affine_transform(input_matrix, self.affine_matrix, **kwargs)
+            transformed = sn.affine_transform(input_matrix, self.affine_matrix, **kwargs)
         return transformed
 
 

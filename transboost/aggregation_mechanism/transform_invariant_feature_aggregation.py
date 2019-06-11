@@ -7,7 +7,8 @@ from torch.nn import functional as F
 import warnings
 import matplotlib.pyplot as plt
 from graal_utils import timed
-from .affine_transform import RandomAffine
+
+from transboost.aggregation_mechanism import random_affine
 
 
 class TransformInvariantFeatureAggregation:
@@ -35,31 +36,44 @@ class TransformInvariantFeatureAggregation:
             X (Array or Tensor of shape (n_examples, n_channels, height, width)): Examples to extract high level features from.
             filters (Filter object): Filters used to extract high level features.
         """
-        filters = [filters.to(device=X.device) for f in filters]
-
         n_examples, n_channels, height, width = X.shape
-        random_features = []
-        for conv_filter in filters:
-            i_min = max(conv_filter.i - self.locality, 0)
-            j_min = max(conv_filter.j - self.locality, 0)
-            i_max = min(conv_filter.i + conv_filter.weight.shape[-2] + self.locality, height)
-            j_max = min(conv_filter.j + conv_filter.weight.shape[-1] + self.locality, width)
+        high_level_features = []
+        # filters.weight.shape = (n_filters, n_channel, filter_height, filter_width)
+        for weights, (i,j), ats in zip(filters.weights, filters.pos, filters.affine_transforms):
+            i_min = max(i - self.locality, 0)
+            j_min = max(j - self.locality, 0)
+            i_max = min(i + weights.shape[-2] + self.locality, height)
+            j_max = min(j + weights.shape[-1] + self.locality, width)
 
-            output = F.conv2d(X[:,:,i_min:i_max, j_min:j_max], conv_filter.weight)
-            # output.shape -> (n_examples, n_transforms, height, array)
-            if maxpool_shape:
+            transformed_weights = []
+            for affine_transforms in ats:
+                transformed_chs = []
+                for ch, affine_transform in zip(weights, affine_transforms):
+                    transformed_ch = affine_transform(ch)
+                    transformed_ch = torch.unsqueeze(torch.from_numpy(transformed_ch), dim=0)
+                    transformed_chs.append(transformed_ch)
+                transformed_chs = torch.unsqueeze(torch.cat(transformed_chs, dim=0), dim=0)
+                transformed_weights.append(transformed_chs)
+
+            transformed_weights = torch.cat(transformed_weights, dim=0)
+            transformed_weights.to(device=X.device)
+            # transformed_weights.shape = (n_transforms, n_channel, filter_height+4, filter_width+4)
+
+            output = F.conv2d(X[:,:,i_min:i_max, j_min:j_max], transformed_weights)
+            # output.shape = (n_examples, n_transforms, height, array)
+            if self.maxpool_shape:
                 output = torch.unsqueeze(output, dim=1)
-                # output.shape -> (n_examples, 1, n_transforms, height, array)
+                # output.shape = (n_examples, 1, n_transforms, height, array)
                 self._compute_maxpool_shape(output)
-                output = F.max_pool3d(output, maxpool_shape, ceil_mode=True)
+                output = F.max_pool3d(output, self.maxpool_shape, ceil_mode=True)
 
-            random_features.append(output.reshape(n_examples, -1))
+            high_level_features.append(output.reshape(n_examples, -1))
 
-        random_features = torch.cat(random_features, dim=1)
-        random_features = self.activation(random_features)
-        random_features = self.activation(random_features)
-        random_features = random_features.cpu().reshape((n_examples, -1))
-        return random_features
+        high_level_features = torch.cat(high_level_features, dim=1)
+        if self.activation:
+            high_level_features = self.activation(high_level_features)
+        high_level_features = high_level_features.cpu().reshape((n_examples, -1))
+        return high_level_features
 
     def _compute_maxpool_shape(self, output):
         if self.maxpool_shape[0] == -1:
