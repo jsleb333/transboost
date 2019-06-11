@@ -8,6 +8,9 @@ from transboost.callbacks import CallbacksManagerIterator, Step,\
     BreakOnPlateauCallback, BreakOnZeroRiskCallback
 from transboost.utils import *
 from transboost.quadboost import BoostingRound, QuadBoostMHCR, QuadBoostMH
+from torch.nn import functional as F
+from transboost.aggregation_mechanism.transform_invariant_feature_aggregation import \
+    TransformInvariantFeatureAggregation
 
 
 class TransBoost:
