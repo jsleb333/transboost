@@ -8,6 +8,7 @@ from sklearn.preprocessing import StandardScaler
 from time import time
 
 try:
+
     try:
         from datasets_path import path_to
     except ModuleNotFoundError:
@@ -57,8 +58,10 @@ def load_cifar10(filepath=cifar10_raw):
                  'cifar-10-batches-bin/test_batch.bin']
 
     # Download tarfile if missing
-    if tar_filename not in os.listdir(filepath):
+    if not os.path.exists(filepath) or tar_filename not in os.listdir(filepath):
+        print('Downloading cifar...')
         download_cifar10(filepath)
+        print('Download finished.')
 
     t = time()
     # Load data from tarfile

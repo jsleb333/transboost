@@ -6,7 +6,6 @@ import torch.nn.functional as F
 import logging
 from graal_utils import timed
 
-
 from transboost.weak_learner.weak_learner_base import *
 from transboost.label_encoder import LabelEncoder, OneHotEncoder, AllPairsEncoder
 from transboost.callbacks import CallbacksManagerIterator, Step
@@ -21,7 +20,9 @@ class TransBoost(QuadBoostMHCR):
     """
     QuadBoostMHCR, but with a twist: every τ steps, the previous weak learners must provide a set of convolutional filters to apply to X before resuming the training.
 
-    The weak learner should be able to choose a number of good filters to give to TransBoost. To do so, the weak learner should define a 'select_filters()' method which returns a torch.Tensor of shape (some_number_of_filters, n_channels, width, height).
+    The weak learner should be able to choose a number of good filters to give to TransBoost. To do so, the weak learner
+     should define a 'select_filters()' method which returns a torch.Tensor of shape (some_number_of_filters, n_channels,
+      width, height).
     """
     def algorithm(self, *args, **kwargs):
         return TransBoostAlgorithm(*args, **kwargs)
@@ -71,7 +72,6 @@ class TransBoost(QuadBoostMHCR):
 
         # Initialization
         self.weak_predictors = []
-        self.weak_predictors_weights = []
 
         if f0 == None:
             self.f0 = np.zeros(self.encoder.encoding_dim)
@@ -142,7 +142,7 @@ class TransBoost(QuadBoostMHCR):
             qb_algo = self.algorithm(boost_manager, self.encoder, self.weak_learner,
                                     X, Y, residue, weights, encoded_Y_pred,
                                     X_val, Y_val, encoded_Y_val_pred)
-            filters_of_the_layer = qb_algo.fit(self.weak_predictors, self.weak_predictors_weights, n_filters, **weak_learner_fit_kwargs)
+            filters_of_the_layer = qb_algo.fit(self.weak_predictors, n_filters, **weak_learner_fit_kwargs)
             print('Going to next layer...')
             filters_of_the_layer = torch.cat(filters_of_the_layer, dim=0)
 
@@ -185,20 +185,20 @@ class TransBoostAlgorithm:
         self.encoded_Y_val_pred = encoded_Y_val_pred
         self.dampening = np.array([dampening])
 
-    def fit(self, weak_predictors, weak_predictors_weights, n_filters, **weak_learner_fit_kwargs):
+    def fit(self, weak_predictors, n_filters, **weak_learner_fit_kwargs):
         """
         Execute the algorithm.
         Appends the weak_predictors and weak_predictors_weights lists with the fitted weak learners.
 
         Args:
-            weak_predictors (list): Reference to the list of weak_predictors of the model.
-            weak_predictors_weights (list): Reference to the list of weak_predictors_weights of the model.
+            weak_predictors (list of dict ['predictor', 'weight']): Reference to the list of weak_predictors of the model
+             and their weights.
             **weak_learner_fit_kwargs: Keyword arguments needed to fit the weak learner.
 
         Returns filters, a list of torch.Tensors.
         """
         filters = []
-        with self.boost_manager: # boost_manager handles callbacks and terminating conditions
+        with self.boost_manager:  # boost_manager handles callbacks and terminating conditions
             for boosting_round in self.boost_manager:
 
                 weak_predictor = self.weak_learner().fit(self.X, self.residue, self.weights,                                                 **weak_learner_fit_kwargs)
@@ -208,8 +208,7 @@ class TransBoostAlgorithm:
                 weighted_weak_prediction = weak_predictor_weight * weak_prediction
                 self.residue -= weighted_weak_prediction
 
-                weak_predictors_weights.append(weak_predictor_weight)
-                weak_predictors.append(weak_predictor)
+                weak_predictors.append({'predictor': weak_predictor, 'weight': weak_predictor_weight})
 
                 self._evaluate_round(boosting_round, weighted_weak_prediction, weak_predictor, weak_predictor_weight)
 
