@@ -32,6 +32,9 @@ def star_function(X, W):
 def g_function(X, W):
     pass
 
+def d_function(B):
+    pass
+
 
 class TransBoost:
     def __init__(self, filter_bank, weak_learner, encoder=None, n_filters_per_layer=100, n_layers=3,
@@ -107,10 +110,10 @@ class TransBoost:
         encoded_Y_pred = np.zeros((X.shape[0], self.encoder.encoding_dim)) + self.f0
         if mode == 'best':
             best = self.best_round.step_number + 1
-            encoded_Y_pred += self.weak_predictors[:best]['weight'] * self.weak_predictors[:best]['predictor'].predict(X)
+            encoded_Y_pred += self.weak_predictors[:best].predict(X)
         else:
             for predictor in self.weak_predictors:
-                encoded_Y_pred += predictor['weight'] * predictor['predictor'].predict(X)
+                encoded_Y_pred += predictor * predictor.predict(X)
 
         return encoded_Y_pred
 
@@ -148,7 +151,6 @@ class TransBoostAlgorithm:
         with self.boost_manager:  # boost_manager handles callbacks and terminating conditions
             for boosting_round in self.boost_manager:
                 filters.append(self.init_filters())
-                weak_predictors.append(list())
                 S = self.get_multi_layers_random_features(filters[boosting_round.step_number])
                 weak_predictor = self.weak_learner().fit(S, self.residue, self.weights, **weak_learner_fit_kwargs)
                 S = self.get_multi_layers_random_features(filters[boosting_round.step_number])
@@ -158,7 +160,7 @@ class TransBoostAlgorithm:
                 self._evaluate_round(boosting_round, weak_prediction, weak_predictor)
 
     def init_filters(self):
-        filters = self.draw_from_bank(sum(self.n_filters_per_layer))
+        filters = d_function(sum(self.n_filters_per_layer))
         W = list()
         W.append(filters[:self.n_filters_per_layer[0]])
         filters = filters[self.n_filters_per_layer[0]:]
