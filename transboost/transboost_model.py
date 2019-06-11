@@ -6,30 +6,15 @@ import torch.nn.functional as F
 import logging
 from graal_utils import timed
 
-import sys, os
-sys.path.append(os.getcwd())
 
-try:
-    from weak_learner import *
-    from label_encoder import LabelEncoder, OneHotEncoder, AllPairsEncoder
-    from callbacks import CallbacksManagerIterator, Step
-    from callbacks import ModelCheckpoint, CSVLogger, Progression, BestRoundTrackerCallback
-    from callbacks import (BreakOnMaxStepCallback, BreakOnPerfectTrainAccuracyCallback,
-                        BreakOnPlateauCallback, BreakOnZeroRiskCallback)
-    from utils import *
-    from quadboost import BoostingRound
-
-except ModuleNotFoundError:
-    from .weak_learner import *
-    from .label_encoder import LabelEncoder, OneHotEncoder, AllPairsEncoder
-    from .callbacks import CallbacksManagerIterator, Step
-    from .callbacks import ModelCheckpoint, CSVLogger, Progression, BestRoundTrackerCallback
-    from .callbacks import (BreakOnMaxStepCallback, BreakOnPerfectTrainAccuracyCallback,
-                        BreakOnPlateauCallback, BreakOnZeroRiskCallback)
-    from .utils import *
-    from .quadboost import BoostingRound
-
-from quadboost import QuadBoostMH, QuadBoostMHCR
+from transboost.weak_learner.weak_learner_base import *
+from transboost.label_encoder import LabelEncoder, OneHotEncoder, AllPairsEncoder
+from transboost.callbacks import CallbacksManagerIterator, Step
+from transboost.callbacks import ModelCheckpoint, CSVLogger, Progression, BestRoundTrackerCallback
+from transboost.callbacks import (BreakOnMaxStepCallback, BreakOnPerfectTrainAccuracyCallback,
+                    BreakOnPlateauCallback, BreakOnZeroRiskCallback)
+from transboost.utils import *
+from transboost.quadboost import BoostingRound, QuadBoostMH, QuadBoostMHCR
 
 
 class TransBoost(QuadBoostMHCR):
@@ -304,5 +289,5 @@ if __name__ == '__main__':
     import logging
     logging.basicConfig(level=logging.INFO, style='{', format='[{levelname}] {message}')
 
-    from datasets import MNISTDataset, CIFAR10Dataset
+    from transboost.datasets import MNISTDataset, CIFAR10Dataset
     main()
