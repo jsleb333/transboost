@@ -5,33 +5,36 @@ import sys
 import os
 from transboost.weak_learner import *
 from transboost.label_encoder import LabelEncoder, OneHotEncoder, AllPairsEncoder
-from transboost.callbacks import CallbacksManagerIterator, Step, ModelCheckpoint, CSVLogger, Progression, \
-    BestRoundTrackerCallback, BreakOnMaxStepCallback, BreakOnPerfectTrainAccuracyCallback, BreakOnPlateauCallback, \
-    BreakOnZeroRiskCallback
-from .utils import *
-from .quadboost import BoostingRound, QuadBoostMHCR, QuadBoostMH
-sys.path.append(os.getcwd())
+from transboost.callbacks import CallbacksManagerIterator, Step,\
+    ModelCheckpoint, CSVLogger, Progression, BestRoundTrackerCallback,\
+    BreakOnMaxStepCallback, BreakOnPerfectTrainAccuracyCallback,\
+    BreakOnPlateauCallback, BreakOnZeroRiskCallback
+from transboost.utils import *
+from transboost.quadboost import BoostingRound, QuadBoostMHCR, QuadBoostMH
 
 
 class TransBoost:
     def __init__(self, filter_bank, weak_learner, encoder=None, n_filters_per_layer=100, n_layers=3,
-                 f0=None, patience=None, break_on_perfect_train_acc=False, callbacks=None,):
+                 f0=None, patience=None, break_on_perfect_train_acc=False, callbacks=None):
         self.filter_bank = filter_bank
         self.weak_learner = weak_learner
         self.encoder = encoder
-        self.callbacks = list()
-        self.weak_predictors = list()
-        self.filters = list()
+        self.callbacks = []
+        self.weak_predictors = []
+        self.filters = []
         self.best_round = None
+
         self.n_layers = n_layers
         if isinstance(n_filters_per_layer, int):
             self.n_filters_per_layer = [n_filters_per_layer]*n_layers
         else:
             self.n_filters_per_layer = n_filters_per_layer
+
         if f0 is None:
             self.f0 = np.zeros(self.encoder.encoding_dim)
         else:
             self.f0 = f0
+
         # Callbacks
         if callbacks is None:
             callbacks = [Progression()]
@@ -75,10 +78,10 @@ class TransBoost:
         starting_round = BoostingRound(len(self.weak_predictors))
         boost_manager = CallbacksManagerIterator(self, self.callbacks, starting_round)
 
-        qb_algo = self.algorithm(boost_manager, self.encoder, self.weak_learner,
+        algo = self.algorithm(boost_manager, self.encoder, self.weak_learner,
                                  X, Y, residue, weights, encoded_Y_pred,
                                  X_val, Y_val, encoded_Y_val_pred)
-        qb_algo.fit(self.weak_predictors, self.filters, **weak_learner_fit_kwargs)
+        algo.fit(self.weak_predictors, self.filters, **weak_learner_fit_kwargs)
 
     def predict(self, X, mode='best'):
         return self.encoder.decode_labels(self.predict_encoded(X, mode))
@@ -114,8 +117,10 @@ class TransBoost:
 class TransBoostAlgorithm:
     n_filters_per_layer: []
 
-    def __init__(self, boost_manager, encoder, weak_learner, X, Y, residue, weights, encoded_Y_pred, X_val, Y_val,
-                 encoded_Y_val_pred, filter_bank, n_filters_per_layer, n_layers=3,):
+    def __init__(self, boost_manager, encoder, weak_learner, filter_bank,
+                 X, Y, residue, weights, encoded_Y_pred,
+                 X_val, Y_val, encoded_Y_val_pred,
+                 n_filters_per_layer, n_layers=3):
         self.boost_manager = boost_manager
         self.encoder = encoder
         self.weak_learner = weak_learner
@@ -142,7 +147,7 @@ class TransBoostAlgorithm:
 
     def init_filters(self):
         filters = d_function(sum(self.n_filters_per_layer))
-        W = list()
+        W = []
         W.append(filters[:self.n_filters_per_layer[0]])
         filters = filters[self.n_filters_per_layer[0]:]
         for i in range(1, self.n_layers):
@@ -176,7 +181,7 @@ def d_function(B):
 
 
 def get_multi_layers_random_features(examples, filters):
-    S = list()
+    S = []
     for i in range(len(filters)):
         if i == 0:
             X = examples
