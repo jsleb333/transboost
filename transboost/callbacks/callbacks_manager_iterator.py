@@ -1,10 +1,4 @@
-import sys, os
-sys.path.append(os.getcwd())
-
-try:
-    from transboost.callbacks import CallbackList
-except ModuleNotFoundError:
-    from callbacks import CallbackList
+from transboost.callbacks import CallbackList
 
 
 class Step:

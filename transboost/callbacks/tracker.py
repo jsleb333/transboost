@@ -1,10 +1,7 @@
 import logging
 from copy import deepcopy
 
-try:
-    from transboost.callbacks import Callback
-except ModuleNotFoundError:
-    from callbacks import Callback
+from transboost.callbacks import Callback
 
 
 class BestRoundTrackerCallback(Callback):

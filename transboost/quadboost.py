@@ -5,25 +5,13 @@ import matplotlib.pyplot as plt
 import logging
 from graal_utils import timed
 
-import sys, os
-sys.path.append(os.getcwd())
-
-try:
-    from weak_learner import *
-    from label_encoder import LabelEncoder, OneHotEncoder, AllPairsEncoder
-    from callbacks import CallbacksManagerIterator, Step
-    from callbacks import ModelCheckpoint, CSVLogger, Progression, BestRoundTrackerCallback
-    from callbacks import (BreakOnMaxStepCallback, BreakOnPerfectTrainAccuracyCallback,
-                        BreakOnPlateauCallback, BreakOnZeroRiskCallback)
-    from utils import *
-except ModuleNotFoundError:
-    from .weak_learner import *
-    from .label_encoder import LabelEncoder, OneHotEncoder, AllPairsEncoder
-    from .callbacks import CallbacksManagerIterator, Step
-    from .callbacks import ModelCheckpoint, CSVLogger, Progression, BestRoundTrackerCallback
-    from .callbacks import (BreakOnMaxStepCallback, BreakOnPerfectTrainAccuracyCallback,
-                        BreakOnPlateauCallback, BreakOnZeroRiskCallback)
-    from .utils import *
+from transboost.weak_learner import *
+from transboost.label_encoder import LabelEncoder, OneHotEncoder, AllPairsEncoder
+from transboost.callbacks import CallbacksManagerIterator, Step
+from transboost.callbacks import ModelCheckpoint, CSVLogger, Progression, BestRoundTrackerCallback
+from transboost.callbacks import (BreakOnMaxStepCallback, BreakOnPerfectTrainAccuracyCallback,
+                    BreakOnPlateauCallback, BreakOnZeroRiskCallback)
+from transboost.utils import *
 
 
 class _QuadBoost:

@@ -1,2 +1,4 @@
 from .quadboost import QuadBoostMH, QuadBoostMHCR
-from .transboost import TransBoost
+
+from .transboost_model import TransBoost
+

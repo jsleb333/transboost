@@ -3,18 +3,9 @@ from sklearn.metrics import accuracy_score
 import heapq as hq
 from graal_utils import timed
 
-import sys, os
-sys.path.append(os.getcwd())
-
-try:
-    from transboost.weak_learner import _WeakLearnerBase
-    from transboost.weak_learner import MulticlassDecisionStump
-    from transboost.utils import ComparableMixin
-except ModuleNotFoundError:
-    from weak_learner import _WeakLearnerBase
-    from weak_learner import MulticlassDecisionStump
-    from utils import ComparableMixin
-
+from transboost.weak_learner import _WeakLearnerBase
+from transboost.weak_learner import MulticlassDecisionStump
+from transboost.utils import ComparableMixin
 
 
 class MulticlassDecisionTree(_WeakLearnerBase):

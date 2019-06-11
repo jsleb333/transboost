@@ -2,13 +2,7 @@ import numpy as np
 from sklearn.linear_model import Ridge
 from graal_utils import timed
 
-import sys, os
-sys.path.append(os.getcwd())
-
-try:
-    from transboost.weak_learner import _WeakLearnerBase
-except ModuleNotFoundError:
-    from weak_learner import _WeakLearnerBase
+from transboost.weak_learner import _WeakLearnerBase
 
 
 class WLRidge(_WeakLearnerBase, Ridge):

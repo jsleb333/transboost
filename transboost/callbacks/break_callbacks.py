@@ -1,12 +1,7 @@
 import numpy as np
 import logging
-import sys, os
-sys.path.append(os.getcwd())
 
-try:
-    from transboost.callbacks import Callback, BestRoundTrackerCallback
-except ModuleNotFoundError:
-    from callbacks import Callback, BestRoundTrackerCallback
+from transboost.callbacks import Callback, BestRoundTrackerCallback
 
 
 class BreakCallback(Callback):

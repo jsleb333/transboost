@@ -1,9 +1,6 @@
 import logging
 
-try:
-    from transboost.callbacks import Callback
-except ModuleNotFoundError:
-    from callbacks import Callback
+from transboost.callbacks import Callback
 
 
 class RestoreBestModelCallback(Callback):

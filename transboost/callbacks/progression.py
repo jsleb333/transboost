@@ -1,11 +1,6 @@
 import time
-import sys, os
-sys.path.append(os.getcwd())
 
-try:
-    from transboost.callbacks import Callback
-except ModuleNotFoundError:
-    from callbacks import Callback
+from transboost.callbacks import Callback
 
 
 class Progression(Callback):

@@ -32,3 +32,5 @@ transboost/CMakeFiles/
 transboost/cmake_install.cmake
 transboost/CMakeCache.txt
 transboost/Makefile
+
+TransBoost.egg-info/
