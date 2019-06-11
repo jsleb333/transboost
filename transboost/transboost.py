@@ -17,7 +17,7 @@ try:
     from callbacks import (BreakOnMaxStepCallback, BreakOnPerfectTrainAccuracyCallback,
                         BreakOnPlateauCallback, BreakOnZeroRiskCallback)
     from utils import *
-    from quadboost import BoostingRound
+    from quadboost import BoostingRound, QuadBoostMH, QuadBoostMHCR
 
 except ModuleNotFoundError:
     from .weak_learner import *
@@ -27,9 +27,7 @@ except ModuleNotFoundError:
     from .callbacks import (BreakOnMaxStepCallback, BreakOnPerfectTrainAccuracyCallback,
                         BreakOnPlateauCallback, BreakOnZeroRiskCallback)
     from .utils import *
-    from .quadboost import BoostingRound
-
-from quadboost import QuadBoostMH, QuadBoostMHCR
+    from .quadboost import BoostingRound, QuadBoostMHCR, QuadBoostMH
 
 
 class TransBoost(QuadBoostMHCR):
@@ -214,7 +212,7 @@ class TransBoostAlgorithm:
         Returns filters, a list of torch.Tensors.
         """
         filters = []
-        with self.boost_manager: # boost_manager handles callbacks and terminating conditions
+        with self.boost_manager:  # boost_manager handles callbacks and terminating conditions
             for boosting_round in self.boost_manager:
 
                 weak_predictor = self.weak_learner().fit(self.X, self.residue, self.weights,                                                 **weak_learner_fit_kwargs)
