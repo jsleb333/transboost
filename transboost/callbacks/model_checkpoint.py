@@ -1,13 +1,7 @@
 import pickle as pkl
 from copy import copy
-import sys, os
-sys.path.append(os.getcwd())
 
-
-try:
-    from transboost.callbacks import PeriodicSaveCallback, PickleSaveMixin, Callback
-except ModuleNotFoundError:
-    from callbacks import PeriodicSaveCallback, PickleSaveMixin, Callback
+from transboost.callbacks import PeriodicSaveCallback, PickleSaveMixin, Callback
 
 
 class ModelCheckpoint(Callback):

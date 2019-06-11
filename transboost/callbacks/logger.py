@@ -1,11 +1,4 @@
-import sys, os
-sys.path.append(os.getcwd())
-
-
-try:
-    from transboost.callbacks import PeriodicSaveCallback, CSVSaveMixin
-except ModuleNotFoundError:
-    from callbacks import PeriodicSaveCallback, CSVSaveMixin
+from transboost.callbacks import PeriodicSaveCallback, CSVSaveMixin
 
 
 class CSVLogger(PeriodicSaveCallback, CSVSaveMixin):

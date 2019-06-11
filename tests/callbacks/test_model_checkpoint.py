@@ -1,8 +1,7 @@
 import pytest
 import pickle as pkl
 from unittest.mock import MagicMock
-import os, sys
-sys.path.append(os.getcwd())
+import os
 
 from transboost.callbacks import ModelCheckpoint, CallbacksManagerIterator
 

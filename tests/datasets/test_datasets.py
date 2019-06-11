@@ -1,7 +1,6 @@
 import pytest
+import os
 import numpy as np
-import os, sys
-sys.path.append(os.getcwd())
 
 from transboost.datasets import ImageDataset
 from transboost.datasets.mnist import mnist_path

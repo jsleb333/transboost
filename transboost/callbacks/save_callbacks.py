@@ -1,15 +1,11 @@
 import sys, os
-sys.path.append(os.getcwd())
 
 import warnings
 import pickle as pkl
 import csv
 import logging
 
-try:
-    from transboost.callbacks import Callback
-except ModuleNotFoundError:
-    from callbacks import Callback
+from transboost.callbacks import Callback
 
 
 class SaveCallback(Callback):
