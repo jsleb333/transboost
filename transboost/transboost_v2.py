@@ -1,16 +1,13 @@
 import torch
-from graal_utils import timed
-import logging
-import sys
-import os
 from transboost.weak_learner import *
 from transboost.label_encoder import LabelEncoder, OneHotEncoder, AllPairsEncoder
 from transboost.callbacks import CallbacksManagerIterator, Step, ModelCheckpoint, CSVLogger, Progression, \
     BestRoundTrackerCallback, BreakOnMaxStepCallback, BreakOnPerfectTrainAccuracyCallback, BreakOnPlateauCallback, \
     BreakOnZeroRiskCallback
+from torch.nn import functional as F
 from .utils import *
-from .quadboost import BoostingRound, QuadBoostMHCR, QuadBoostMH
-sys.path.append(os.getcwd())
+from .quadboost import BoostingRound
+
 
 
 class TransBoost:
@@ -141,13 +138,13 @@ class TransBoostAlgorithm:
                 self._evaluate_round(boosting_round, weak_prediction, weak_predictor)
 
     def init_filters(self):
-        filters = d_function(sum(self.n_filters_per_layer))
+        filters = draw_filters_from_bank(sum(self.n_filters_per_layer))
         W = list()
-        W.append(filters[:self.n_filters_per_layer[0]])
+        W.append(torch.Tensor(filters[:self.n_filters_per_layer[0]]))
         filters = filters[self.n_filters_per_layer[0]:]
         for i in range(1, self.n_layers):
-            filters = star_function(W[i-1], filters)
-            W.append(filters[:self.n_filters_per_layer[i]])
+            filters = advance_to_the_next_layer(W[i - 1], filters)
+            W.append(torch.Tensor(filters[:self.n_filters_per_layer[i]]))
             filters = filters[self.n_filters_per_layer[i]:]
         return W
 
@@ -163,15 +160,23 @@ class TransBoostAlgorithm:
             boosting_round.valid_acc = accuracy_score(y_true=self.Y_val, y_pred=Y_val_pred)
 
 
-def star_function(X, W):
-    pass
+def advance_to_the_next_layer(X, filters):
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    nf, ch, width, height = filters.weights.shape
+    output = F.conv2d(X, filters)
+    # output.shape -> (n_examples, n_filters, conv_height, conv_width)
+    # output = F.max_pool2d(output, (2,2), ceil_mode=True)
+    # F.relu(output, inplace=True)
+    # output = torch.tanh(output)  # , inplace=True)
+    return output
 
 
 def g_function(X, W):
     pass
 
 
-def d_function(B):
+def draw_filters_from_bank(filter_bank, n_filters):
     pass
 
 
@@ -181,7 +186,7 @@ def get_multi_layers_random_features(examples, filters):
         if i == 0:
             X = examples
         else:
-            X = star_function(X, filters[i - 1])
+            X = advance_to_the_next_layer(X, filters[i - 1])
         S.append(g_function(X, filters[i]))
     S = torch.cat(S)  # TODO: trouver la bonne fonction pour concatener les tenseurs dans la bonne dim
     return S
