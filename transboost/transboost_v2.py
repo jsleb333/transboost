@@ -3,38 +3,14 @@ from graal_utils import timed
 import logging
 import sys
 import os
+from transboost.weak_learner import *
+from transboost.label_encoder import LabelEncoder, OneHotEncoder, AllPairsEncoder
+from transboost.callbacks import CallbacksManagerIterator, Step, ModelCheckpoint, CSVLogger, Progression, \
+    BestRoundTrackerCallback, BreakOnMaxStepCallback, BreakOnPerfectTrainAccuracyCallback, BreakOnPlateauCallback, \
+    BreakOnZeroRiskCallback
+from .utils import *
+from .quadboost import BoostingRound, QuadBoostMHCR, QuadBoostMH
 sys.path.append(os.getcwd())
-
-try:
-    from weak_learner import *
-    from label_encoder import LabelEncoder, OneHotEncoder, AllPairsEncoder
-    from callbacks import CallbacksManagerIterator, Step
-    from callbacks import ModelCheckpoint, CSVLogger, Progression, BestRoundTrackerCallback
-    from callbacks import (BreakOnMaxStepCallback, BreakOnPerfectTrainAccuracyCallback,
-                        BreakOnPlateauCallback, BreakOnZeroRiskCallback)
-    from utils import *
-    from quadboost import BoostingRound, QuadBoostMH, QuadBoostMHCR
-except ModuleNotFoundError:
-    from .weak_learner import *
-    from .label_encoder import LabelEncoder, OneHotEncoder, AllPairsEncoder
-    from .callbacks import CallbacksManagerIterator, Step
-    from .callbacks import ModelCheckpoint, CSVLogger, Progression, BestRoundTrackerCallback
-    from .callbacks import (BreakOnMaxStepCallback, BreakOnPerfectTrainAccuracyCallback,
-                        BreakOnPlateauCallback, BreakOnZeroRiskCallback)
-    from .utils import *
-    from .quadboost import BoostingRound, QuadBoostMHCR, QuadBoostMH
-
-
-def star_function(X, W):
-    pass
-
-
-def g_function(X, W):
-    pass
-
-
-def d_function(B):
-    pass
 
 
 class TransBoost:
@@ -155,13 +131,13 @@ class TransBoostAlgorithm:
     def fit(self, weak_predictors, filters, **weak_learner_fit_kwargs):
         with self.boost_manager:  # boost_manager handles callbacks and terminating conditions
             for boosting_round in self.boost_manager:
-                filters.append(self.init_filters())
-                S = get_multi_layers_random_features(self.X, filters[boosting_round.step_number])
+                this_round_filters = self.init_filters()
+                S = get_multi_layers_random_features(self.X, this_round_filters)
                 weak_predictor = self.weak_learner().fit(S, self.residue, self.weights, **weak_learner_fit_kwargs)
-                S = get_multi_layers_random_features(self.X, filters[boosting_round.step_number])
                 weak_prediction = weak_predictor.predict(S)
                 self.residue -= weak_prediction
                 weak_predictors.append(weak_predictor)
+                filters.append(this_round_filters)
                 self._evaluate_round(boosting_round, weak_prediction, weak_predictor)
 
     def init_filters(self):
@@ -185,6 +161,18 @@ class TransBoostAlgorithm:
             self.encoded_Y_val_pred += weak_predictor.predict(self.X_val)
             Y_val_pred = self.encoder.decode_labels(self.encoded_Y_val_pred)
             boosting_round.valid_acc = accuracy_score(y_true=self.Y_val, y_pred=Y_val_pred)
+
+
+def star_function(X, W):
+    pass
+
+
+def g_function(X, W):
+    pass
+
+
+def d_function(B):
+    pass
 
 
 def get_multi_layers_random_features(examples, filters):
