@@ -4,6 +4,16 @@ import os, sys
 sys.path.append(os.getcwd())
 
 from transboost.datasets import ImageDataset
+from transboost.datasets.mnist import mnist_path
+from transboost.datasets.cifar10 import cifar10_path
+
+
+def test_mnist_can_be_found():
+    print(mnist_path)
+    assert os.path.exists(mnist_path)
+
+def test_cifar10_can_be_found():
+    assert os.path.exists(cifar10_path)
 
 
 class TestImageDataset:

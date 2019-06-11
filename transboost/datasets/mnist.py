@@ -11,7 +11,10 @@ import warnings
 from time import time
 
 try:
-    from datasets_path import path_to
+    try:
+        from datasets_path import path_to
+    except ModuleNotFoundError:
+        from .datasets_path import path_to
 except:
     path_to = {'mnist':"transboost/data/mnist/"}
 mnist_path = path_to['mnist']
