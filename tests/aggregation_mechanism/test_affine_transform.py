@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 
-from transboost.aggregation_mechanism import AffineTransform, RandomAffine, random_affine
+from transboost.aggregation_mechanism import AffineTransform, RandomAffineSampler, random_affine
 
 
 rotation, scale, shear, translation, center = .25, (.2, .15), (.1,.05), (4,4), (6,6)
