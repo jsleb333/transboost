@@ -46,8 +46,8 @@ class TransformInvariantFeatureAggregation:
             j_max = min(j + weights.shape[-1] + self.locality, width)
 
             transformed_weights = self._transform_weights(weights, ats)
-            transformed_weights.to(device=X.device)
             # transformed_weights.shape = (n_transforms, n_channel, filter_height+pad, filter_width+pad)
+            transformed_weights.to(device=X.device)
 
             output = F.conv2d(X[:,:,i_min:i_max, j_min:j_max], transformed_weights)
             # output.shape = (n_examples, n_transforms, height, array)
@@ -70,7 +70,7 @@ class TransformInvariantFeatureAggregation:
         for affine_transforms_ch in affine_transforms:
             transformed_chs = []
             for ch, affine_transform in zip(weights, affine_transforms_ch):
-                transformed_ch = affine_transform(ch)
+                transformed_ch = affine_transform(ch) / affine_transform.determinant
                 transformed_ch = torch.unsqueeze(torch.from_numpy(transformed_ch), dim=0)
                 transformed_chs.append(transformed_ch)
             transformed_chs = torch.unsqueeze(torch.cat(transformed_chs, dim=0), dim=0)
