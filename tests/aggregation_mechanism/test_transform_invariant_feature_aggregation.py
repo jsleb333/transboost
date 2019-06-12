@@ -22,16 +22,13 @@ class TestTransformInvariantFeatureAggregation:
         filters = Filters()
 
         tifa = TransformInvariantFeatureAggregation()
-        tifa(X, filters)
+        high_level_features = tifa(X, filters)
 
     def test_transform_weights(self):
         filters = Filters()
-        print(filters.weights.shape)
-        print(len(filters.affine_transforms))
-        print(len(filters.affine_transforms[0]))
         tifa = TransformInvariantFeatureAggregation()
 
-        tw = tifa._transform_weights(filters.weights[0], filters.affine_transforms[0])
-
-        assert tw.shape == (n_transforms, n_channels, f_height, f_width)
+        pad = int(np.ceil(f_width * (np.sqrt(2)-1)/2)) # = 1
+        tw = tifa._transform_weights(filters.weights[0], filters.affine_transforms[0], pad)
+        assert tw.shape == (n_transforms, n_channels, f_height+2*pad, f_width+2*pad)
 

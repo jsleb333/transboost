@@ -40,14 +40,17 @@ class TransformInvariantFeatureAggregation:
         high_level_features = []
         # filters.weight.shape = (n_filters, n_channel, filter_height, filter_width)
         for weights, (i,j), ats in zip(filters.weights, filters.pos, filters.affine_transforms):
-            i_min = max(i - self.locality, 0)
-            j_min = max(j - self.locality, 0)
-            i_max = min(i + weights.shape[-2] + self.locality, height)
-            j_max = min(j + weights.shape[-1] + self.locality, width)
-
-            transformed_weights = self._transform_weights(weights, ats)
+            width = weights.shape[-1]
+            FACTOR = (np.sqrt(2)-1)/2# Minimum factor to pad to not loose any pixels when rotating by π/4 a square filter.
+            pad = int(np.ceil(width * FACTOR))
+            transformed_weights = self._transform_weights(weights, ats, pad)
             # transformed_weights.shape = (n_transforms, n_channel, filter_height+pad, filter_width+pad)
             transformed_weights.to(device=X.device)
+
+            i_min = max(i - self.locality, 0)
+            j_min = max(j - self.locality, 0)
+            i_max = min(i + transformed_weights.shape[-2] + self.locality, height)
+            j_max = min(j + transformed_weights.shape[-1] + self.locality, width)
 
             output = F.conv2d(X[:,:,i_min:i_max, j_min:j_max], transformed_weights)
             # output.shape = (n_examples, n_transforms, height, array)
@@ -65,12 +68,12 @@ class TransformInvariantFeatureAggregation:
         high_level_features = high_level_features.cpu().reshape((n_examples, -1))
         return high_level_features
 
-    def _transform_weights(self, weights, affine_transforms):
+    def _transform_weights(self, weights, affine_transforms, pad):
         transformed_weights = []
         for affine_transforms_ch in affine_transforms:
             transformed_chs = []
             for ch, affine_transform in zip(weights, affine_transforms_ch):
-                transformed_ch = affine_transform(ch) / affine_transform.determinant
+                transformed_ch = affine_transform(np.pad(ch, pad, 'constant')) / affine_transform.determinant
                 transformed_ch = torch.unsqueeze(torch.from_numpy(transformed_ch), dim=0)
                 transformed_chs.append(transformed_ch)
             transformed_chs = torch.unsqueeze(torch.cat(transformed_chs, dim=0), dim=0)
