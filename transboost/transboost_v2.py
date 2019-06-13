@@ -11,10 +11,7 @@ from transboost.quadboost import BoostingRound, QuadBoostMHCR, QuadBoostMH
 from torch.nn import functional as F
 
 
-class Filters:
-    def __init__(self, weights, affine_transforms = []):
-        self.weights = weights
-        self.affine_transforms = affine_transforms
+
 
 
 class TransBoost:
@@ -173,29 +170,23 @@ def advance_to_the_next_layer(X, filters):
     return output
 
 
-def get_multi_layers_filters(filter_bank, n_filters_per_layer):
-    # draw an array of filters Object
-    filters = generate_filters_from_bank(filter_bank, sum(n_filters_per_layer))
-    multi_layer_filters = []
-    multi_layer_filters.append(torch.Tensor(filters[:n_filters_per_layer[0]]))
-
+def get_multi_layers_filters(w_gen: WeightFromBankGenerator, n_filters_per_layer):
+    # w_gen first contains the the examples from the original examples disttributon
+    # draw numbers representing the examples that will generate filters
+    multi_layer_filters = list()
+    filters = w_gen.draw_n_filters_from_bank(sum(n_filters_per_layer[0]))
+    multi_layer_filters.append(filters[:n_filters_per_layer[0]])
     filters = filters[n_filters_per_layer[0]:]
     for i, n_filters in enumerate(n_filters_per_layer[1:], 1):
-        filters = advance_to_the_next_layer(multi_layer_filters[i - 1], filters)
-        multi_layer_filters.append(torch.Tensor(filters[:n_filters]))
+        filters.weights = advance_to_the_next_layer(filters.weights, multi_layer_filters[i - 1].weights)
+        multi_layer_filters.append(filters[:n_filters])
         filters = filters[n_filters:]
+    for filters in multi_layer_filters:
+        w_gen.generate_affine_transforms(filters)
     return multi_layer_filters
 
 
 def g_function(X, W):
-    pass
-
-
-def generate_filters_from_bank(filter_bank, n_filters, i_max, j_max):
-    i, j = (np.random.randint(i_max, j_max))
-
-
-def draw_random_affine_transformations(n_transform):
     pass
 
 

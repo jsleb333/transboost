@@ -14,7 +14,9 @@ n_transforms = 6
 class Filters:
     weights = np.arange(n_filters*n_channels*f_height*f_width).reshape(n_filters,n_channels,f_height, f_width).astype(np.float32)
     pos = [(4, 4)]*n_filters
-    affine_transforms = [[[random_affine(rotation=15, scale_x=.1, shear_x=10, scale_y=.1, shear_y=10, center=(4,4), angle_unit='degrees') for i in range(n_channels)] for _ in range(n_transforms)] for _ in range(n_filters)]
+    affine_transforms = [[[random_affine(rotation=15, scale_x=.1, shear_x=10, scale_y=.1, shear_y=10, center=(4,4),
+                                         angle_unit='degrees') for i in range(n_channels)]
+                          for _ in range(n_transforms)] for _ in range(n_filters)]
 
 
 class TestTransformInvariantFeatureAggregation:
