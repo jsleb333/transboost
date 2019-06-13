@@ -164,12 +164,12 @@ class _QuadBoost:
         """
         encoded_Y_pred = np.zeros((X.shape[0], self.encoder.encoding_dim)) + self.f0
 
-        wp_weights, wps = self.weak_predictors_weights, self.weak_predictors
+        wps = self.weak_predictors
         if mode == 'best':
             best = self.best_round.step_number + 1
-            wp_weights, wps = wp_weights[:best], wps[:best]
-        for wp_weight, wp in zip(wp_weights, wps):
-            encoded_Y_pred += wp_weight * wp.predict(X)
+            wps = wps[:best]
+        for wp in wps:
+            encoded_Y_pred += wp.predict(X)
 
         return encoded_Y_pred
 

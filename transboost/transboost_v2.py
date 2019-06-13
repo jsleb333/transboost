@@ -9,6 +9,7 @@ from transboost.callbacks import CallbacksManagerIterator, Step,\
 from transboost.utils import *
 from transboost.quadboost import BoostingRound, QuadBoostMHCR, QuadBoostMH
 from torch.nn import functional as F
+from transboost.aggregation_mechanism import TransformInvariantFeatureAggregation as Tifa
 
 
 
@@ -186,17 +187,15 @@ def get_multi_layers_filters(w_gen: WeightFromBankGenerator, n_filters_per_layer
     return multi_layer_filters
 
 
-def g_function(X, W):
-    pass
-
-
 def get_multi_layers_random_features(examples, filters):
     S = []
+    tifa = Tifa()
     for i in range(len(filters)):
         if i == 0:
             X = examples
         else:
             X = advance_to_the_next_layer(X, filters[i - 1])
-        S.append(g_function(X, filters[i]))
-    S = torch.Tensor(S)
+        X = torch.unsqueeze(X, dim=0)
+        S.append(tifa(X, filters[i]))
+    S = torch.cat(S, dim=0)
     return S

@@ -2,7 +2,7 @@ import pytest
 import torch
 import numpy
 from transboost.transboost_v2 import *
-from transboost.utils.weight_from_bank_generator import Filters, WeightFromExampleGenerator
+from transboost.utils.weight_from_example_generator import Filters, WeightFromExampleGenerator
 
 
 @pytest.fixture()

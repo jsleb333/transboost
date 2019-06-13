@@ -1,12 +1,12 @@
 import torch
 import logging
 
-from transboost.transboost import TransBoost
+from transboost.transboost_v2 import TransBoost
 from transboost.label_encoder import LabelEncoder, OneHotEncoder, AllPairsEncoder
 from transboost.weak_learner import *
 from transboost.callbacks import *
 from transboost.datasets import get_train_valid_test_bank, MNISTDataset, CIFAR10Dataset
-from transboost.utils import parse
+from transboost.utils import parse, WeightFromExampleGenerator
 from graal_utils import timed
 
 
@@ -77,12 +77,7 @@ def main(m=60_000, val=10_000, da=0, dataset='mnist', center=True, reduce=True, 
         if 'r' in fn:
             f_proc.append(reduce_weight)
 
-        w_gen = WeightFromBankGenerator(filter_bank=filter_bank,
-                                        filters_shape=(fs, fs),
-                                        filters_shape_high=(fsh, fsh) if fsh else None,
-                                        filter_processing=f_proc,
-                                        margin=margin,
-                                        )
+        w_gen = WeightFromExampleGenerator(filter_bank, n_transforms=20)
         if wl.startswith('rcc'):
             filters = Filters(n_filters=n_filters,
                               weights_generator=w_gen,

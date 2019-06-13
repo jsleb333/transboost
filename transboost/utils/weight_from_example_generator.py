@@ -1,5 +1,4 @@
 from transboost.aggregation_mechanism.affine_transform import RandomAffineSampler
-from transboost.weak_learner import RandomConvolution
 import numpy as np
 import torch
 
@@ -61,22 +60,8 @@ class WeightFromExampleGenerator:
 
     @filter_bank.setter
     def filter_bank(self, filter_bank):
-        self._filter_bank = RandomConvolution.format_data(filter_bank)
+        self._filter_bank = self.format_data(filter_bank)
         self.n_examples, n_channels, self.bank_height, self.bank_width = self._filter_bank.shape
-
-    def _draw_filter_shape(self):
-        if not self.filters_shape_high:
-            return self.filters_shape
-        else:
-            return (np.random.randint(self.filters_shape[0], self.filters_shape_high[0]),
-                    np.random.randint(self.filters_shape[1], self.filters_shape_high[1]))
-
-    def __iter__(self):
-        while True:
-            height, width = self._draw_filter_shape()
-            i_max = self.bank_height - height
-            j_max = self.bank_width - width
-            yield self._generate_filter(height, width, i_max, j_max)
 
     def draw_n_examples_from_bank(self, n_examples):
         examples = list()
@@ -124,3 +109,14 @@ class WeightFromExampleGenerator:
                 a.append(b)
             affine_transforms.append(a)
         filters.affine_transforms = affine_transforms
+
+    @staticmethod
+    def format_data(data):
+        """
+        Formats a data array to the right format accepted by this class, which is a torch.Tensor of shape (n_examples, n_channels, height, width).
+        """
+        if type(data) is np.ndarray:
+            data = torch.from_numpy(data).float()
+        if len(data.shape) == 3:
+            data = torch.unsqueeze(data, dim=1)
+        return data
