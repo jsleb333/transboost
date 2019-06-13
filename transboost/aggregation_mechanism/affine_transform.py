@@ -39,6 +39,11 @@ class AffineTransform:
         affine_matrix[:2,2:3] += self.center - center_translation
         return affine_matrix
 
+    @property
+    def determinant(self):
+        aff = self.affine_matrix
+        return aff[0,0]*aff[1,1] - aff[0,1]*aff[1,0]
+
     def __repr__(self):
         return repr(self.affine_matrix)
 
@@ -125,7 +130,7 @@ def random_affine(rotation=0, scale_x=0, scale_y=0, shear_x=0, shear_y=0, transl
     return AffineTransform(random_rot, random_scale, random_shear, random_translation, center)
 
 
-class RandomAffine:
+class RandomAffineSampler:
     """
     Samples random affine transformations given the parameters ranges.
     """

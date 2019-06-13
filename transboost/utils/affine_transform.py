@@ -121,7 +121,7 @@ def random_affine(rotation=0, scale_x=0, scale_y=0, shear_x=0, shear_y=0, transl
     return AffineTransform(random_rot, random_scale, random_shear, random_translation, center)
 
 
-class RandomAffine:
+class RandomAffineSampler:
     """
     Samples random affine transformations given the parameters ranges.
     """

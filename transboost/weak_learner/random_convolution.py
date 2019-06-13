@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from graal_utils import timed
 
 from transboost.weak_learner import _WeakLearnerBase, _Cloner
-from transboost.utils import identity_func, RandomAffine
+from transboost.utils import identity_func, RandomAffineSampler
 from transboost.utils import make_fig_axes
 
 
@@ -183,7 +183,7 @@ class WeightFromBankGenerator:
         self.filter_processing = filter_processing or []
 
         self.rotation, self.scale, self.shear = rotation, scale, shear
-        self.random_affine_sampler = RandomAffine(rotation=rotation, scale_x=scale, scale_y=scale,                                           shear_x=shear, shear_y=shear, angle_unit='degrees')
+        self.random_affine_sampler = RandomAffineSampler(rotation=rotation, scale_x=scale, scale_y=scale,                                           shear_x=shear, shear_y=shear, angle_unit='degrees')
         self.padding = padding
         self.n_transforms = n_transforms
 
