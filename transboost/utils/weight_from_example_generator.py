@@ -93,7 +93,6 @@ class WeightFromExampleGenerator:
         x = x.narrow(2, j, height)
         return x, (i, j)
 
-
     def generate_affine_transforms(self, filters):
         nf, nc, __, _ = filters.weights.shape
         affine_transforms = list()

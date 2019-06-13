@@ -77,22 +77,8 @@ def main(m=60_000, val=10_000, da=0, dataset='mnist', center=True, reduce=True, 
         if 'r' in fn:
             f_proc.append(reduce_weight)
 
-        w_gen = WeightFromExampleGenerator(filter_bank, n_transforms=20)
-        if wl.startswith('rcc'):
-            filters = Filters(n_filters=n_filters,
-                              weights_generator=w_gen,
-                              activation=activation,
-                              maxpool_shape=(maxpool, maxpool))
-        elif wl.startswith('rlc'):
-            filters = LocalFilters(n_filters=n_filters,
-                                   weights_generator=w_gen,
-                                   locality=locality,
-                                   maxpool_shape=(maxpool, maxpool))
-
-        if wl.endswith('sparseridge'):
-            weak_learner = SparseRidgeRC(filters=filters, top_k_filters=top_k)
-        elif wl.endswith('ridge'):
-            weak_learner = RandomConvolution(filters=filters, weak_learner=Ridge)
+        w_gen = WeightFromExampleGenerator(filter_bank, n_transforms=20, margin=margin)
+        weak_learner = Ridge
 
     else:
         raise ValueError(f'Invalid weak learner name: "{wl}".')
@@ -119,7 +105,7 @@ def main(m=60_000, val=10_000, da=0, dataset='mnist', center=True, reduce=True, 
     ### Fitting the model
     if not resume:
         logging.info(f'Beginning fit with filters per layers={n_filters_per_layer} and patience={patience}.')
-        qb = TransBoost(weak_learner, encoder=encoder)
+        qb = TransBoost(w_gen, weak_learner, encoder=encoder, callbacks=callbacks)
         qb.fit(Xtr, Ytr, patience=patience,
                n_filters_per_layer=n_filters_per_layer, n_layers=n_layers,
                X_val=X_val, Y_val=Y_val,

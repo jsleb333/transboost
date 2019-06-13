@@ -82,7 +82,7 @@ class TransBoost:
 
         algo = self.algorithm(boost_manager, self.encoder, self.weak_learner, self.w_gen,
                                  X, Y, residue, weights, encoded_Y_pred,
-                                 X_val, Y_val, encoded_Y_val_pred)
+                                 X_val, Y_val, encoded_Y_val_pred, self.n_filters_per_layer, self.n_layers)
         algo.fit(self.weak_predictors, self.filters, **weak_learner_fit_kwargs)
 
     def predict(self, X, mode='best'):
@@ -195,7 +195,6 @@ def get_multi_layers_random_features(examples, filters):
             X = examples
         else:
             X = advance_to_the_next_layer(X, filters[i - 1])
-        X = torch.unsqueeze(X, dim=0)
         S.append(tifa(X, filters[i]))
     S = torch.cat(S, dim=0)
     return S
