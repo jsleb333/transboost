@@ -24,6 +24,7 @@ class TestTransformInvariantFeatureAggregation:
 
         tifa = TransformInvariantFeatureAggregation(locality=1)
         high_level_features = tifa(X, filters)
+        assert high_level_features.shape == (10, 5)
 
     def test_compute_padding(self):
         tifa = TransformInvariantFeatureAggregation(locality=1)

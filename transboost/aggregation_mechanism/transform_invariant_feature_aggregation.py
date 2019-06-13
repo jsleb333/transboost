@@ -25,7 +25,7 @@ class TransformInvariantFeatureAggregation:
         self.activation = activation
         self.maxpool_shape = maxpool_shape
         if maxpool_shape:
-            self.maxpool_shape = [1, *maxpool_shape] if len(maxpool_shape) == 2 else list(maxpool_shape)
+            self.maxpool_shape = [-1, *maxpool_shape] if len(maxpool_shape) == 2 else list(maxpool_shape)
 
     def __call__(self, X, filters):
         """
@@ -43,6 +43,7 @@ class TransformInvariantFeatureAggregation:
 
             transformed_weights = self._transform_weights(weights, ats, pad)
             # transformed_weights.shape: (n_transforms, n_ch, filter_height+pad, filter_width+pad)
+            self.n_transforms, *_ = transformed_weights.shape
             transformed_weights.to(device=X.device)
 
             ROI = self._get_region_of_interest(X, weights, *pos)
