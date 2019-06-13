@@ -15,9 +15,9 @@ from torch.nn import functional as F
 
 
 class TransBoost:
-    def __init__(self, filter_bank, weak_learner, encoder=None, n_filters_per_layer=100, n_layers=3,
+    def __init__(self, w_gen, weak_learner, encoder=None, n_filters_per_layer=100, n_layers=3,
                  f0=None, patience=None, break_on_perfect_train_acc=False, callbacks=None):
-        self.filter_bank = filter_bank
+        self.w_gen = w_gen
         self.weak_learner = weak_learner
         self.encoder = encoder
         self.callbacks = []
@@ -79,7 +79,7 @@ class TransBoost:
         starting_round = BoostingRound(len(self.weak_predictors))
         boost_manager = CallbacksManagerIterator(self, self.callbacks, starting_round)
 
-        algo = self.algorithm(boost_manager, self.encoder, self.weak_learner,
+        algo = self.algorithm(boost_manager, self.encoder, self.weak_learner, self.w_gen,
                                  X, Y, residue, weights, encoded_Y_pred,
                                  X_val, Y_val, encoded_Y_val_pred)
         algo.fit(self.weak_predictors, self.filters, **weak_learner_fit_kwargs)
@@ -118,7 +118,7 @@ class TransBoost:
 class TransBoostAlgorithm:
     n_filters_per_layer: list()
 
-    def __init__(self, boost_manager, encoder, weak_learner, filter_bank,
+    def __init__(self, boost_manager, encoder, weak_learner, w_gen,
                  X, Y, residue, weights, encoded_Y_pred,
                  X_val, Y_val, encoded_Y_val_pred,
                  n_filters_per_layer, n_layers=3):
@@ -130,14 +130,14 @@ class TransBoostAlgorithm:
         self.X_val, self.Y_val = X_val, Y_val
         self.encoded_Y_pred = encoded_Y_pred
         self.encoded_Y_val_pred = encoded_Y_val_pred
-        self.filter_bank = filter_bank
+        self.w_gen = w_gen
         self.n_filters_per_layer = n_filters_per_layer
         self.n_layers = n_layers
 
     def fit(self, weak_predictors, filters, **weak_learner_fit_kwargs):
         with self.boost_manager:  # boost_manager handles callbacks and terminating conditions
             for boosting_round in self.boost_manager:
-                this_round_filters = get_multi_layers_filters(self.filter_bank, self.n_filters_per_layer)
+                this_round_filters = get_multi_layers_filters(self.w_gen, self.n_filters_per_layer)
                 S = get_multi_layers_random_features(self.X, this_round_filters)
                 weak_predictor = self.weak_learner().fit(S, self.residue, self.weights, **weak_learner_fit_kwargs)
                 weak_prediction = weak_predictor.predict(S)
@@ -171,16 +171,16 @@ def advance_to_the_next_layer(X, filters):
 
 
 def get_multi_layers_filters(w_gen: WeightFromBankGenerator, n_filters_per_layer):
-    # w_gen first contains the the examples from the original examples disttributon
+    # w_gen first contains the the examples from the original examples distributon
     # draw numbers representing the examples that will generate filters
     multi_layer_filters = list()
-    filters = w_gen.draw_n_filters_from_bank(sum(n_filters_per_layer[0]))
-    multi_layer_filters.append(filters[:n_filters_per_layer[0]])
-    filters = filters[n_filters_per_layer[0]:]
+    examples = w_gen.draw_n_examples_from_bank(sum(n_filters_per_layer))
+    multi_layer_filters.append(w_gen.generate_filters(examples[:n_filters_per_layer[0]]))
+    examples = examples[n_filters_per_layer[0]:]
     for i, n_filters in enumerate(n_filters_per_layer[1:], 1):
-        filters.weights = advance_to_the_next_layer(filters.weights, multi_layer_filters[i - 1].weights)
-        multi_layer_filters.append(filters[:n_filters])
-        filters = filters[n_filters:]
+        examples = advance_to_the_next_layer(examples, multi_layer_filters[i - 1])
+        multi_layer_filters.append(w_gen.generate_filters(examples[:n_filters]))
+        examples = examples[n_filters:]
     for filters in multi_layer_filters:
         w_gen.generate_affine_transforms(filters)
     return multi_layer_filters
@@ -198,5 +198,5 @@ def get_multi_layers_random_features(examples, filters):
         else:
             X = advance_to_the_next_layer(X, filters[i - 1])
         S.append(g_function(X, filters[i]))
-    S = torch.cat(S)  # TODO: trouver la bonne fonction pour concatener les tenseurs dans la bonne dim
+    S = torch.Tensor(S)
     return S

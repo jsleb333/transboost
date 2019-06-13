@@ -2,6 +2,7 @@ import pytest
 import torch
 import numpy
 from transboost.transboost_v2 import *
+from transboost.utils.weight_from_bank_generator import Filters, WeightFromExampleGenerator
 
 
 @pytest.fixture()
@@ -15,12 +16,13 @@ def examples():
 def filters():
     # create filter object with weights 3x1x5x5 filter
     filter_weights = torch.Tensor(numpy.random.randint(0, 255, size=(3, 1, 5, 5)))
-    filters = Filters(filter_weights)
+    filters = Filters(filter_weights, [])
     return filters
 
+
 @pytest.fixture()
-def transboot_algo():
-    TransBoostAlgorithm()
+def w_gen(examples):
+    return WeightFromExampleGenerator(examples)
 
 
 class Testtransboost:
@@ -37,6 +39,9 @@ class Testtransboost:
     def test_init_filters(self):
         pass
 
-    def test_get_multi_layers_filters(self):
-        pass
+    def test_get_multi_layers_filters(self, w_gen):
+        n_filters_per_layer = [3, 2]
+        m_l_f = get_multi_layers_filters(w_gen, n_filters_per_layer)
+        assert m_l_f[0].weights.shape == (3, 1, 5, 5)
+        assert m_l_f[1].weights.shape == (2, 3, 5, 5)
 

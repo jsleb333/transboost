@@ -19,8 +19,7 @@ class Filters:
         return Filters(weights, pos)
 
 
-
-class WeightFromBankGenerator:
+class WeightFromExampleGenerator:
     """
     Infinite generator of weights.
     """
@@ -77,43 +76,48 @@ class WeightFromBankGenerator:
             height, width = self._draw_filter_shape()
             i_max = self.bank_height - height
             j_max = self.bank_width - width
-            yield self._draw_weights_from_bank(height, width, i_max, j_max)
+            yield self._generate_filter(height, width, i_max, j_max)
 
-    def draw_n_filters_from_bank(self, n_filters):
-        ne, nc, w, h = self.filter_bank.shape
+    def draw_n_examples_from_bank(self, n_examples):
+        examples = list()
+        for i in range(n_examples):
+            example = self.filter_bank[np.random.randint(self.n_examples)].clone().detach().cpu()
+            example = torch.unsqueeze(example, dim=0)
+            examples.append(example)
+        return torch.cat(examples, dim=0)
+
+    def generate_filters(self, examples):
         weights = list()
         pos = list()
-        for i in range(n_filters):
-            w = list()
-            p = list()
-            for j in range(nc):
-                height, width = self.filter_shape
-                i_max = self.bank_height - height
-                j_max = self.bank_width - width
-                weight, pos = self._draw_weights_from_bank(height, width, i_max, j_max)
-                w.append(weight)
-                p.append(pos)
-            weights.append(w)
+        for example in examples:
+            weight, p = self._generate_filter(example)
+            weights.append(torch.unsqueeze(weight, dim=0))
             pos.append(p)
-        filters = Filters(torch.Tensor(weights), pos)
+        weights = torch.cat(weights, dim=0)
+        filters = Filters(weights, pos)
         return filters
 
-    def _draw_weights_from_bank(self, height, width, i_max, j_max):
+    def _generate_filter(self, example):
         # (i, j) is the top left corner where the filter position was taken
+        height, width = self.filters_shape
+        i_max = example.shape[1] - height
+        j_max = example.shape[2] - width
         i, j = (np.random.randint(self.margin, i_max-self.margin),
                 np.random.randint(self.margin, j_max-self.margin))
-        x = self.filter_bank[np.random.randint(self.n_examples)].clone().detach().cpu()
-        weight = x[i:i+width, j:j+height]
-        return weight, (i, j)
+        x = example.narrow(1, i, width)
+        x = x.narrow(2, j, height)
+        return x, (i, j)
+
 
     def generate_affine_transforms(self, filters):
+        nf, nc, __, _ = filters.weights.shape
         affine_transforms = list()
-        for nf in filters.pos:
+        for i in range(nf):
             a = list()
-            for nc in nf:
+            top_left_c = filters.pos[i]
+            center = (top_left_c[0] + (filters.weights.shape[2] - 1) / 2, top_left_c[1] + (filters.weights.shape[3] - 1) / 2)
+            for j in range(nc):
                 b = list()
-                top_left_c = nc
-                center = (top_left_c[0]+(filters.shape[2]-1)/2, top_left_c[1]+(filters.shape[3]-1)/2)
                 for k in range(self.n_transforms):
                     affine_transform = self.random_affine_sampler.sample_transformation(center=center)
                     b.append(affine_transform)

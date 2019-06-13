@@ -1,3 +1,4 @@
+pytest
 git+https://github.com/GRAAL-Research/graal-utils
 torch
 torchvision
