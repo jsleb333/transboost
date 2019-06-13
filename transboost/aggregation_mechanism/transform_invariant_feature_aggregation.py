@@ -21,7 +21,6 @@ class TransformInvariantFeatureAggregation:
 
             activation (Callable or None, optional): Activation function to apply which returns transformed data.
         """
-
         self.locality = locality
         self.activation = activation
         self.maxpool_shape = maxpool_shape
@@ -38,21 +37,17 @@ class TransformInvariantFeatureAggregation:
         """
         n_examples, n_channels, height, width = X.shape
         high_level_features = []
-        # filters.weight.shape = (n_filters, n_channel, filter_height, filter_width)
-        for weights, (i,j), ats in zip(filters.weights, filters.pos, filters.affine_transforms):
-            width = weights.shape[-1]
-            FACTOR = (np.sqrt(2)-1)/2# Minimum factor to pad to not loose any pixels when rotating by π/4 a square filter.
-            pad = int(np.ceil(width * FACTOR))
+        # filters.weight.shape = (n_filters, n_channels, filter_height, filter_width)
+        for weights, pos, ats in zip(filters.weights, filters.pos, filters.affine_transforms):
+            pad = self._compute_padding(weights)
+
             transformed_weights = self._transform_weights(weights, ats, pad)
-            # transformed_weights.shape = (n_transforms, n_channel, filter_height+pad, filter_width+pad)
+            # transformed_weights.shape: (n_transforms, n_ch, filter_height+pad, filter_width+pad)
             transformed_weights.to(device=X.device)
 
-            i_min = max(i - self.locality, 0)
-            j_min = max(j - self.locality, 0)
-            i_max = min(i + transformed_weights.shape[-2] + self.locality, height)
-            j_max = min(j + transformed_weights.shape[-1] + self.locality, width)
+            ROI = self._get_region_of_interest(X, weights, *pos)
 
-            output = F.conv2d(X[:,:,i_min:i_max, j_min:j_max], transformed_weights)
+            output = F.conv2d(ROI, transformed_weights, padding=pad)
             # output.shape = (n_examples, n_transforms, height, array)
             if self.maxpool_shape:
                 output = torch.unsqueeze(output, dim=1)
@@ -67,6 +62,24 @@ class TransformInvariantFeatureAggregation:
             high_level_features = self.activation(high_level_features)
         high_level_features = high_level_features.cpu().reshape((n_examples, -1))
         return high_level_features
+
+    def _compute_padding(self, weights):
+        filter_width = weights.shape[-1]
+        PAD_FACTOR = (np.sqrt(2)-1)/2# Minimum factor to pad to not loose any pixels when rotating by π/4 a square filter.
+        pad = int(np.ceil(filter_width * PAD_FACTOR))
+        return pad
+
+    def _get_region_of_interest(self, X, weights, i, j):
+        n_examples, n_channels, height, width = X.shape
+        i_min = max(i - self.locality, 0)
+        j_min = max(j - self.locality, 0)
+        i_max = min(i + weights.shape[-2] + self.locality, height)
+        j_max = min(j + weights.shape[-1] + self.locality, width)
+
+        if j_max - j_min < weights.shape[-1] or i_max - i_min < weights.shape[-2]:
+            raise ValueError(f"Filter shape of {(weights.shape[-2], weights.shape[-1])} too large.")
+
+        return X[:,:,i_min:i_max, j_min:j_max]
 
     def _transform_weights(self, weights, affine_transforms, pad):
         transformed_weights = []
