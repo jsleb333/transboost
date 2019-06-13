@@ -9,8 +9,12 @@ from transboost.callbacks import CallbacksManagerIterator, Step,\
 from transboost.utils import *
 from transboost.quadboost import BoostingRound, QuadBoostMHCR, QuadBoostMH
 from torch.nn import functional as F
-from transboost.aggregation_mechanism.transform_invariant_feature_aggregation import \
-    TransformInvariantFeatureAggregation
+
+
+class Filters:
+    def __init__(self, weights, affine_transforms = []):
+        self.weights = weights
+        self.affine_transforms = affine_transforms
 
 
 class TransBoost:
@@ -136,7 +140,7 @@ class TransBoostAlgorithm:
     def fit(self, weak_predictors, filters, **weak_learner_fit_kwargs):
         with self.boost_manager:  # boost_manager handles callbacks and terminating conditions
             for boosting_round in self.boost_manager:
-                this_round_filters = self.init_filters()
+                this_round_filters = get_multi_layers_filters(self.filter_bank, self.n_filters_per_layer)
                 S = get_multi_layers_random_features(self.X, this_round_filters)
                 weak_predictor = self.weak_learner().fit(S, self.residue, self.weights, **weak_learner_fit_kwargs)
                 weak_prediction = weak_predictor.predict(S)
@@ -144,18 +148,6 @@ class TransBoostAlgorithm:
                 weak_predictors.append(weak_predictor)
                 filters.append(this_round_filters)
                 self._evaluate_round(boosting_round, weak_prediction, weak_predictor)
-
-    def init_filters(self):
-        filters = draw_filters_from_bank(sum(self.n_filters_per_layer))
-        W = []
-        W.append(torch.Tensor(filters[:self.n_filters_per_layer[0]]))
-
-        filters = filters[self.n_filters_per_layer[0]:]
-        for i in range(1, self.n_layers):
-            filters = advance_to_the_next_layer(W[i - 1], filters)
-            W.append(torch.Tensor(filters[:self.n_filters_per_layer[i]]))
-            filters = filters[self.n_filters_per_layer[i]:]
-        return W
 
     def _evaluate_round(self, boosting_round, weak_prediction, weak_predictor):
         self.encoded_Y_pred += weak_prediction
@@ -173,7 +165,7 @@ def advance_to_the_next_layer(X, filters):
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
     nf, ch, width, height = filters.weights.shape
-    output = F.conv2d(X, filters)
+    output = F.conv2d(X, filters.weights)
     # output.shape -> (n_examples, n_filters, conv_height, conv_width)
     # output = F.max_pool2d(output, (2,2), ceil_mode=True)
     # F.relu(output, inplace=True)
@@ -181,11 +173,29 @@ def advance_to_the_next_layer(X, filters):
     return output
 
 
+def get_multi_layers_filters(filter_bank, n_filters_per_layer):
+    # draw an array of filters Object
+    filters = generate_filters_from_bank(filter_bank, sum(n_filters_per_layer))
+    multi_layer_filters = []
+    multi_layer_filters.append(torch.Tensor(filters[:n_filters_per_layer[0]]))
+
+    filters = filters[n_filters_per_layer[0]:]
+    for i, n_filters in enumerate(n_filters_per_layer[1:], 1):
+        filters = advance_to_the_next_layer(multi_layer_filters[i - 1], filters)
+        multi_layer_filters.append(torch.Tensor(filters[:n_filters]))
+        filters = filters[n_filters:]
+    return multi_layer_filters
+
+
 def g_function(X, W):
     pass
 
 
-def draw_filters_from_bank(filter_bank, n_filters):
+def generate_filters_from_bank(filter_bank, n_filters, i_max, j_max):
+    i, j = (np.random.randint(i_max, j_max))
+
+
+def draw_random_affine_transformations(n_transform):
     pass
 
 
