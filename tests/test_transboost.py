@@ -33,15 +33,10 @@ class Testtransboost:
         new_X = advance_to_the_next_layer(examples, filters)
         assert new_X.shape == (10, 3, 16, 16)
 
-    def test_generate_filters_from_bank(self):
-        pass
-
-    def test_init_filters(self):
-        pass
-
     def test_get_multi_layers_filters(self, w_gen):
-        n_filters_per_layer = [3, 2]
+        n_filters_per_layer = [3, 3, 2]
         m_l_f = get_multi_layers_filters(w_gen, n_filters_per_layer)
         assert m_l_f[0].weights.shape == (3, 1, 5, 5)
-        assert m_l_f[1].weights.shape == (2, 3, 5, 5)
+        assert m_l_f[1].weights.shape == (3, 3, 5, 5)
+        assert m_l_f[2].weights.shape == (2, 3, 5, 5)
 
