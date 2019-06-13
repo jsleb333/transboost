@@ -20,6 +20,24 @@ class Filters:
 class TransBoost:
     def __init__(self, filter_bank, weak_learner, encoder=None, n_filters_per_layer=100, n_layers=3,
                  f0=None, patience=None, break_on_perfect_train_acc=False, callbacks=None):
+        """
+        Args:
+            filter_bank (Array of shape (n_examples, n_channels, height, width)): Bank of examples in which filters are drawn.
+
+            weak_learner (Object that defines the 'fit' method and the 'predict' method): Weak learner that generates weak predictors to be boosted on.
+
+            encoder (LabelEncoder object, optional): Object that encodes the labels to provide an easier separation problem. If None, a one-hot encoding is used.
+
+            f0 (Array of shape (encoding_dim,), optional, default=None): Initial prediction function. If None, f0 is set to 0.
+
+            patience (int, optional, default=None): Number of boosting rounds before terminating the algorithm when the training accuracy shows no improvements. If None, the boosting rounds will continue until max_round_number iterations (if not None).
+
+            break_on_perfect_train_acc (Boolean, optional, default=False): If True, it will stop the iterations if a perfect train accuracy of 1.0 is achieved.
+
+            callbacks (Iterable of Callback objects, optional, default=None): Callbacks objects to be called at some specific step of the training procedure to execute something. Ending conditions of the boosting iteration are handled with BreakCallbacks. If callbacks contains BreakCallbacks and terminating conditions (max_round_number, patience, break_on_perfect_train_acc) are not None, all conditions will be checked at each round and the first that is not verified will stop the iteration.
+
+        """
+
         self.filter_bank = filter_bank
         self.weak_learner = weak_learner
         self.encoder = encoder
@@ -56,6 +74,24 @@ class TransBoost:
         return TransBoostAlgorithm(*args, **kwargs)
 
     def fit(self, X, Y, X_val=None, Y_val=None, **weak_learner_fit_kwargs):
+        """
+        Function that fits the model to the data.
+
+        The function is split into two parts: the first prepare the data, the second, done in _fit, actually executes the algorithm. The iteration and the callbacks are handled by a CallbacksManagerIterator.
+
+        Args:
+            X (Array of shape (n_examples, ...)): Examples.
+
+            Y (Iterable of 'n_examples' elements): Labels for the examples X. Y is encoded with the encode_labels method if one is provided, else it is transformed as one-hot vectors.
+
+            X_val (Array of shape (n_val, ...), optional, default=None): Validation examples. If not None, the validation accuracy will be evaluated at each boosting round.
+
+            Y_val (Iterable of 'n_val' elements, optional, default=None): Validation labels for the examples X_val. If not None, the validation accuracy will be evaluated at each boosting round.
+
+            weak_learner_fit_kwargs: Keyword arguments to pass to the fit method of the weak learner.
+
+        Returns self.
+        """
         # Initialization
         self.weak_predictors = []
         if not any(isinstance(callback, BestRoundTrackerCallback) for callback in self.callbacks):
@@ -138,6 +174,17 @@ class TransBoostAlgorithm:
         self.n_layers = n_layers
 
     def fit(self, weak_predictors, filters, **weak_learner_fit_kwargs):
+        """
+        Executes the algorithm.
+        Appends the weak_predictors list with the fitted weak learners.
+
+        Args:
+            weak_predictors (list): Reference to the list of weak_predictors of the model.
+            filters (Filters object): Filters used in the aggregation mechanism.
+            weak_learner_fit_kwargs: Keyword arguments needed to fit the weak learner.
+
+        Returns None.
+        """
         with self.boost_manager:  # boost_manager handles callbacks and terminating conditions
             for boosting_round in self.boost_manager:
                 this_round_filters = get_multi_layers_filters(self.filter_bank, self.n_filters_per_layer)
