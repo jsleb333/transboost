@@ -104,8 +104,8 @@ class WeightFromExampleGenerator:
             [
                 [
                     self.random_affine_sampler.sample_transformation(center(pos))
-                    for _ in range(self.n_transforms)]
-                for _ in range(n_channels)]
+                    for _ in range(n_channels)]
+                for _ in range(self.n_transforms)]
             for pos in filters_pos]
 
         return affine_transforms

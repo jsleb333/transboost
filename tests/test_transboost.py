@@ -40,18 +40,17 @@ class Testtransboost:
         assert mlf[0].weights.shape == (3, 1, 5, 5)
         assert len(mlf[0].pos) == 3
         assert len(mlf[0].affine_transforms) == 3
-        assert len(mlf[0].affine_transforms[0]) == 1
-        assert len(mlf[0].affine_transforms[0][0]) == n_transforms
+        assert len(mlf[0].affine_transforms[0]) == n_transforms
+        assert len(mlf[0].affine_transforms[0][0]) == 1
 
         assert mlf[1].weights.shape == (3, 3, 5, 5)
         assert len(mlf[1].pos) == 3
         assert len(mlf[1].affine_transforms) == 3
-        assert len(mlf[1].affine_transforms[0]) == 3
-        assert len(mlf[1].affine_transforms[0][0]) == n_transforms
+        assert len(mlf[1].affine_transforms[0]) == n_transforms
+        assert len(mlf[1].affine_transforms[0][0]) == 3
 
         assert mlf[2].weights.shape == (2, 3, 5, 5)
         assert len(mlf[2].pos) == 2
         assert len(mlf[2].affine_transforms) == 2
-        assert len(mlf[2].affine_transforms[0]) == 3
-        assert len(mlf[2].affine_transforms[0][0]) == n_transforms
-
+        assert len(mlf[2].affine_transforms[0]) == n_transforms
+        assert len(mlf[2].affine_transforms[0][0]) == 3
