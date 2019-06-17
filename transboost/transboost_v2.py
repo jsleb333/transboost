@@ -117,12 +117,10 @@ class TransBoost:
 
 
 class TransBoostAlgorithm:
-    n_filters_per_layer: list()
-
     def __init__(self, boost_manager, encoder, weak_learner, w_gen,
                  X, Y, residue, weights, encoded_Y_pred,
                  X_val, Y_val, encoded_Y_val_pred,
-                 n_filters_per_layer, n_layers=3):
+                 n_filters_per_layer=list(), n_layers=3):
         self.boost_manager = boost_manager
         self.encoder = encoder
         self.weak_learner = weak_learner
@@ -162,28 +160,29 @@ class TransBoostAlgorithm:
 def advance_to_the_next_layer(X, filters):
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
-    nf, ch, width, height = filters.weights.shape
-    output = F.conv2d(X, filters.weights)
-    # output.shape -> (n_examples, n_filters, conv_height, conv_width)
-    # output = F.max_pool2d(output, (2,2), ceil_mode=True)
-    # F.relu(output, inplace=True)
-    # output = torch.tanh(output)  # , inplace=True)
-    return output
+    next_layer = F.conv2d(X, filters.weights)
+    # n_filters, n_channels, width, height = filters.weights.shape
+    # next_layer.shape -> (n_examples, n_filters, conv_height, conv_width)
+    # next_layer = F.max_pool2d(next_layer, (2,2), ceil_mode=True)
+    # F.relu(next_layer, inplace=True)
+    # next_layer = torch.tanh(next_layer)  # , inplace=True)
+    return next_layer
 
 
 def get_multi_layers_filters(w_gen: WeightFromBankGenerator, n_filters_per_layer):
     # w_gen first contains the the examples from the original examples distributon
     # draw numbers representing the examples that will generate filters
-    multi_layer_filters = list()
     examples = w_gen.draw_n_examples_from_bank(sum(n_filters_per_layer))
-    multi_layer_filters.append(w_gen.generate_filters(examples[:n_filters_per_layer[0]]))
+    first_layer_filters = w_gen.generate_filters(examples[:n_filters_per_layer[0]])
+    multi_layer_filters = [first_layer_filters]
     examples = examples[n_filters_per_layer[0]:]
-    for i, n_filters in enumerate(n_filters_per_layer[1:], 1):
-        examples = advance_to_the_next_layer(examples, multi_layer_filters[i - 1])
-        multi_layer_filters.append(w_gen.generate_filters(examples[:n_filters]))
+
+    for i, n_filters in enumerate(n_filters_per_layer[1:]):
+        examples = advance_to_the_next_layer(examples, multi_layer_filters[i])
+        next_layer_filters = w_gen.generate_filters(examples[:n_filters])
+        multi_layer_filters.append(next_layer_filters)
         examples = examples[n_filters:]
-    for filters in multi_layer_filters:
-        w_gen.generate_affine_transforms(filters)
+
     return multi_layer_filters
 
 

@@ -50,8 +50,10 @@ class WeightFromExampleGenerator:
         self.filters_shape = filters_shape
         self.filter_bank = filter_bank
         self.margin = margin
-        self.random_affine_sampler = RandomAffineSampler(rotation=rotation, scale_x=scale, scale_y=scale, shear_x=shear,
-                                                         shear_y=shear, angle_unit='degrees')
+        self.random_affine_sampler = RandomAffineSampler(rotation=rotation,
+                                                         scale_x=scale, scale_y=scale,
+                                                         shear_x=shear, shear_y=shear,
+                                                         angle_unit='degrees')
         self.n_transforms = n_transforms
 
     @property
@@ -72,14 +74,14 @@ class WeightFromExampleGenerator:
         return torch.cat(examples, dim=0)
 
     def generate_filters(self, examples):
-        weights = list()
-        pos = list()
+        weights, pos = [], []
         for example in examples:
             weight, p = self._generate_filter(example)
             weights.append(torch.unsqueeze(weight, dim=0))
             pos.append(p)
         weights = torch.cat(weights, dim=0)
-        filters = Filters(weights, pos)
+        affine_transforms = self._generate_affine_transforms(weights, pos)
+        filters = Filters(weights, pos, affine_transforms)
         return filters
 
     def _generate_filter(self, example):
@@ -93,21 +95,20 @@ class WeightFromExampleGenerator:
         x = x.narrow(2, j, height)
         return x, (i, j)
 
-    def generate_affine_transforms(self, filters):
-        n_filters, n_channels, height, width = filters.weights.shape
-        affine_transforms = list()
-        for i in range(n_filters):
-            a = list()
-            top_left_c = filters.pos[i]
-            center = (top_left_c[0] + (height - 1)/2, top_left_c[1] + (width - 1)/2)
-            for j in range(n_channels):
-                b = list()
-                for k in range(self.n_transforms):
-                    affine_transform = self.random_affine_sampler.sample_transformation(center=center)
-                    b.append(affine_transform)
-                a.append(b)
-            affine_transforms.append(a)
-        filters.affine_transforms = affine_transforms
+    def _generate_affine_transforms(self, filters_weights, filters_pos):
+        n_filters, n_channels, height, width = filters_weights.shape
+        center = lambda top_left_corner: (top_left_corner[0] + (height - 1)/2,
+                                          top_left_corner[1] + (width - 1)/2)
+
+        affine_transforms = [
+            [
+                [
+                    self.random_affine_sampler.sample_transformation(center(pos))
+                    for _ in range(self.n_transforms)]
+                for _ in range(n_channels)]
+            for pos in filters_pos]
+
+        return affine_transforms
 
     @staticmethod
     def format_data(data):
