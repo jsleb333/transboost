@@ -22,7 +22,7 @@ def filters():
 n_transforms = 9
 
 @pytest.fixture()
-def w_gen(examples):
+def filter_generator(examples):
     return FiltersGenerator(examples, n_transforms=n_transforms)
 
 
@@ -34,9 +34,9 @@ class Testtransboost:
         new_X = advance_to_the_next_layer(examples, filters)
         assert new_X.shape == (10, 3, 16, 16)
 
-    def test_get_multi_layers_filters(self, w_gen):
+    def test_get_multi_layers_filters(self, filter_generator):
         n_filters_per_layer = [3, 3, 2]
-        mlf = get_multi_layers_filters(w_gen, n_filters_per_layer)
+        mlf = get_multi_layers_filters(filter_generator, n_filters_per_layer)
         assert mlf[0].weights.shape == (3, 1, 5, 5)
         assert len(mlf[0].pos) == 3
         assert len(mlf[0].affine_transforms) == 3
