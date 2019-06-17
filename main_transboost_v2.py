@@ -6,7 +6,7 @@ from transboost.label_encoder import LabelEncoder, OneHotEncoder, AllPairsEncode
 from transboost.weak_learner import *
 from transboost.callbacks import *
 from transboost.datasets import get_train_valid_test_bank, MNISTDataset, CIFAR10Dataset
-from transboost.utils import parse, FiltersGenerator
+from transboost.utils import parse, FiltersGenerator, Filters
 from graal_utils import timed
 
 
@@ -16,7 +16,7 @@ def main(m=60_000, val=10_000, dataset='mnist', center=True, reduce=True,
          encodings='onehot', wl='ridge',
          fs=5, fsh=0, n_layers=1, n_filters_per_layer=[10],
          bank_ratio=.05, fn='c',
-         loc=3, degrees=0, scale=.0, shear=0, margin=2, nt=1,
+         loc=3, rot=0, scale=.0, shear=0, margin=2, nt=1,
          nl='maxpool', maxpool=8,
          max_round=1000, patience=1000, resume=0,
          device='cpu', seed=101,
@@ -56,9 +56,15 @@ def main(m=60_000, val=10_000, dataset='mnist', center=True, reduce=True,
     kwargs = {}
 
     if wl == 'ridge':
-        filename += f'-nf={n_filters}-fs={fs}'
+        # Preparing filters
+        # n_filters_per_layer = [int(f) for f in n_filters_per_layer]
+        if len(n_filters_per_layer) == 1:
+            n_filters_per_layer = n_filters_per_layer*n_layers
+
+        filename += f'-nfperlayer={n_filters_per_layer}'
+        filename += f'-fs={fs}'
         if fsh: filename += f'_to_{fsh}'
-        if loc != -1: filename += f'-loc={locality}'
+        if loc != -1: filename += f'-loc={loc}'
 
         activation = None
         if 'maxpool' in nl:
@@ -83,7 +89,7 @@ def main(m=60_000, val=10_000, dataset='mnist', center=True, reduce=True,
         if 'r' in fn:
             f_proc.append(reduce_weight)
 
-        w_gen = FiltersGenerator(filter_bank, n_transforms=20, margin=margin)
+        filters_generator = FiltersGenerator(filter_bank, rotation=rot, scale=scale, shear=shear, n_transforms=nt, margin=margin)
         weak_learner = Ridge
 
     else:
@@ -91,14 +97,9 @@ def main(m=60_000, val=10_000, dataset='mnist', center=True, reduce=True,
 
     logging.info(f'Weak learner: {type(weak_learner).__name__}')
 
-    # n_filters_per_layer = [int(f) for f in n_filters_per_layer]
-    if len(n_filters_per_layer) == 1:
-        n_filters_per_layer = n_filters_per_layer*n_layers
-
-    filename += f'-nfperlayer={n_filters_per_layer}'
 
     ### Callbacks
-    ckpt = ModelCheckpoint(filename=filename+'-{round}.ckpt', dirname='./results', save_last=True)
+    ckpt = ModelCheckpoint(filename=filename+'-{round}.ckpt', dirname='./results')
     logger = CSVLogger(filename=filename+'-log.csv', dirname='./results/log')
     zero_risk = BreakOnZeroRiskCallback()
     callbacks = [ckpt,
@@ -111,7 +112,7 @@ def main(m=60_000, val=10_000, dataset='mnist', center=True, reduce=True,
     ### Fitting the model
     if not resume:
         logging.info(f'Beginning fit with filters per layers={n_filters_per_layer} and patience={patience}.')
-        qb = TransBoost(w_gen, weak_learner, encoder=encoder, callbacks=callbacks)
+        qb = TransBoost(filters_generator, weak_learner, encoder=encoder, callbacks=callbacks)
         qb.fit(Xtr, Ytr, patience=patience,
                n_filters_per_layer=n_filters_per_layer, n_layers=n_layers,
                X_val=X_val, Y_val=Y_val,
@@ -133,4 +134,4 @@ def main(m=60_000, val=10_000, dataset='mnist', center=True, reduce=True,
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, style='{', format='[{levelname}] {message}')
-    main()
+    main(m=100, val=10)

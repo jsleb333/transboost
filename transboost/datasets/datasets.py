@@ -230,8 +230,7 @@ def _generate_cifar10_dataset():
     dataset.save()
 
 
-def get_train_valid_test_bank(dataset='mnist', valid=0, center=False, reduce=False, shuffle=True, n_examples=60000,
-                              bank_ratio=0.05):
+def get_train_valid_test_bank(dataset='mnist', valid=0, center=False, reduce=False, shuffle=True, n_examples=60000, bank_ratio=0.05, device='cpu'):
         if 'mnist' in dataset:
             data = MNISTDataset.load(dataset + '.pkl')
         elif 'cifar' in dataset:
