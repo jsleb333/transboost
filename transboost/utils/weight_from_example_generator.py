@@ -4,7 +4,7 @@ import torch
 
 
 class Filters:
-    def __init__(self, weights, pos, affine_transforms=[]):
+    def __init__(self, weights, pos, affine_transforms=list()):
         self.pos = pos
         self.weights = weights
         self.affine_transforms = affine_transforms
@@ -94,13 +94,13 @@ class WeightFromExampleGenerator:
         return x, (i, j)
 
     def generate_affine_transforms(self, filters):
-        nf, nc, __, _ = filters.weights.shape
+        n_filters, n_channels, height, width = filters.weights.shape
         affine_transforms = list()
-        for i in range(nf):
+        for i in range(n_filters):
             a = list()
             top_left_c = filters.pos[i]
-            center = (top_left_c[0] + (filters.weights.shape[2] - 1) / 2, top_left_c[1] + (filters.weights.shape[3] - 1) / 2)
-            for j in range(nc):
+            center = (top_left_c[0] + (height - 1)/2, top_left_c[1] + (width - 1)/2)
+            for j in range(n_channels):
                 b = list()
                 for k in range(self.n_transforms):
                     affine_transform = self.random_affine_sampler.sample_transformation(center=center)
