@@ -19,10 +19,11 @@ def filters():
     filters = Filters(filter_weights, [])
     return filters
 
+n_transforms = 9
 
 @pytest.fixture()
 def w_gen(examples):
-    return WeightFromExampleGenerator(examples)
+    return WeightFromExampleGenerator(examples, n_transforms=n_transforms)
 
 
 class Testtransboost:
@@ -35,8 +36,22 @@ class Testtransboost:
 
     def test_get_multi_layers_filters(self, w_gen):
         n_filters_per_layer = [3, 3, 2]
-        m_l_f = get_multi_layers_filters(w_gen, n_filters_per_layer)
-        assert m_l_f[0].weights.shape == (3, 1, 5, 5)
-        assert m_l_f[1].weights.shape == (3, 3, 5, 5)
-        assert m_l_f[2].weights.shape == (2, 3, 5, 5)
+        mlf = get_multi_layers_filters(w_gen, n_filters_per_layer)
+        assert mlf[0].weights.shape == (3, 1, 5, 5)
+        assert len(mlf[0].pos) == 3
+        assert len(mlf[0].affine_transforms) == 3
+        assert len(mlf[0].affine_transforms[0]) == 1
+        assert len(mlf[0].affine_transforms[0][0]) == n_transforms
+
+        assert mlf[1].weights.shape == (3, 3, 5, 5)
+        assert len(mlf[1].pos) == 3
+        assert len(mlf[1].affine_transforms) == 3
+        assert len(mlf[1].affine_transforms[0]) == 3
+        assert len(mlf[1].affine_transforms[0][0]) == n_transforms
+
+        assert mlf[2].weights.shape == (2, 3, 5, 5)
+        assert len(mlf[2].pos) == 2
+        assert len(mlf[2].affine_transforms) == 2
+        assert len(mlf[2].affine_transforms[0]) == 3
+        assert len(mlf[2].affine_transforms[0][0]) == n_transforms
 
