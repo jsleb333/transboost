@@ -13,11 +13,11 @@ from transboost.utils import identity_func, RandomAffineSampler
 from transboost.utils import make_fig_axes
 
 
-class Filters(_Cloner):
+class FiltersOld(_Cloner):
     """
     Class that encapsulates a number of filters and convolutes them with a dataset when 'apply' is called.
 
-    Each call to an instance of the class will yield a new Filters object instanciated with the same arguments (see _Cloner). This allows to pick different filters from the weights_generator every new instance.
+    Each call to an instance of the class will yield a new FiltersOld object instanciated with the same arguments (see _Cloner). This allows to pick different filters from the weights_generator every new instance.
     """
     def __init__(self, n_filters, weights_generator, maxpool_shape=(3,3), activation=None):
         """
@@ -100,8 +100,8 @@ class Filters(_Cloner):
             self.maxpool_shape[2] = output.shape[-1]
 
 
-class LocalFilters(Filters):
-    __doc__ = Filters.__doc__ + """\n
+class LocalFilters(FiltersOld):
+    __doc__ = FiltersOld.__doc__ + """\n
     The convolution is made locally only around the area the filter was drawn.
     """
     def __init__(self, *args, locality=5, **kwargs):
@@ -150,7 +150,7 @@ class LocalFilters(Filters):
         return random_features
 
 
-class FiltersGenerator:
+class WeightsFromBankGenerator:
     """
     Infinite generator of weights.
     """
@@ -248,7 +248,7 @@ class RandomConvolution(_WeakLearnerBase):
     def __init__(self, filters, encoder=None, weak_learner=Ridge):
         """
         Args:
-            filters (callable): Callable that creates and returns a Filters object. A Filters object should define an 'apply' method that receives the examples (torch array of shape (n_examples, n_channels, width, height)) and outputs extracted features (torch array of shape (n_examples, n_features)).
+            filters (callable): Callable that creates and returns a FiltersOld object. A FiltersOld object should define an 'apply' method that receives the examples (torch array of shape (n_examples, n_channels, width, height)) and outputs extracted features (torch array of shape (n_examples, n_features)).
             encoder (LabelEncoder object, optional): Encoder to encode labels. If None, no encoding will be made before fitting.
             weak_learner (Callable that returns a new object that defines the 'fit' and 'predict' methods, such as object inheriting from _WeakLearnerBase, optional): Regressor that will fit the data. Default is a Ridge regressor from scikit-learn.
         """
@@ -321,7 +321,7 @@ class SparseRidgeRC(RandomConvolution):
     def __init__(self, filters, top_k_filters=5, encoder=None):
         """
         Args:
-            filters (callable): Callable that creates and returns a Filters object. A Filters object should define an 'apply' method that receives the examples (torch array of shape (n_examples, n_channels, width, height)) and outputs extracted features (torch array of shape (n_examples, n_features)).
+            filters (callable): Callable that creates and returns a FiltersOld object. A FiltersOld object should define an 'apply' method that receives the examples (torch array of shape (n_examples, n_channels, width, height)) and outputs extracted features (torch array of shape (n_examples, n_features)).
 
             top_k_filters (int, optional): Number of filters to keep after trying all the filters from 'filters'.
 
@@ -403,7 +403,7 @@ def main():
     nt = 1
     nf = 100
     print(f'n filters = {nf}, n transform = {nt}')
-    filter_gen = FiltersGenerator(filter_bank=Xtr[m:m+bank],
+    filter_gen = WeightsFromBankGenerator(filter_bank=Xtr[m:m+bank],
                                          filters_shape=(11,11),
                                         #  filters_shape=(5,5),
                                         #  filters_shape_high=(16,16),
@@ -414,7 +414,7 @@ def main():
                                          shear=shear,
                                          n_transforms=nt,
                                          )
-    filters = Filters(n_filters=nf,
+    filters = FiltersOld(n_filters=nf,
                       maxpool_shape=(-1,6,6),
                     #   activation=torch.sigmoid,
                       weights_generator=filter_gen,
