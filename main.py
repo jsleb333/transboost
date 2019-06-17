@@ -123,7 +123,7 @@ def main(m=60_000, val=10_000, da=0, dataset='mnist', center=True, reduce=True, 
         if 'r' in fn:
             f_proc.append(reduce_weight)
 
-        w_gen = WeightFromBankGenerator(filter_bank=filter_bank,
+        w_gen = FiltersGenerator(filter_bank=filter_bank,
                                         filters_shape=(fs, fs),
                                         filters_shape_high=(fsh, fsh) if fsh else None,
                                         filter_processing=f_proc,

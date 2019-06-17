@@ -150,7 +150,7 @@ class LocalFilters(Filters):
         return random_features
 
 
-class WeightFromBankGenerator:
+class FiltersGenerator:
     """
     Infinite generator of weights.
     """
@@ -403,7 +403,7 @@ def main():
     nt = 1
     nf = 100
     print(f'n filters = {nf}, n transform = {nt}')
-    filter_gen = WeightFromBankGenerator(filter_bank=Xtr[m:m+bank],
+    filter_gen = FiltersGenerator(filter_bank=Xtr[m:m+bank],
                                          filters_shape=(11,11),
                                         #  filters_shape=(5,5),
                                         #  filters_shape_high=(16,16),

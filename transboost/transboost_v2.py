@@ -18,7 +18,7 @@ class TransBoost:
                  patience=None, break_on_perfect_train_acc=False, callbacks=None):
         """
         Args:
-            filters_generator (WeightFromBankGenerator object): Objects that generates filters from a bank of examples.
+            filters_generator (FiltersGenerator object): Objects that generates filters from a bank of examples.
 
             weak_learner (Object that defines the 'fit' method and the 'predict' method): Weak learner that generates weak predictors to be boosted on.
 
@@ -213,7 +213,7 @@ def advance_to_the_next_layer(X, filters):
     return next_layer
 
 
-def get_multi_layers_filters(filters_generator: WeightFromBankGenerator, n_filters_per_layer):
+def get_multi_layers_filters(filters_generator: FiltersGenerator, n_filters_per_layer):
     # filters_generator first contains the the examples from the original examples distributon
     # draw numbers representing the examples that will generate filters
     examples = filters_generator.draw_n_examples_from_bank(sum(n_filters_per_layer))

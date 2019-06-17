@@ -13,7 +13,7 @@ class TestLocalFilters:
     pass
 
 
-class TestWeightFromBankGenerator:
+class TestFiltersGenerator:
     pass
 
 

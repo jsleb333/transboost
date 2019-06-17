@@ -256,7 +256,7 @@ def main():
     encoder = OneHotEncoder(Ytr)
 
     ### Choice of weak learner
-    f_gen = WeightFromBankGenerator(filter_bank=bank,
+    f_gen = FiltersGenerator(filter_bank=bank,
                                     filters_shape=(5,5),
                                     filter_processing=center_weight)
     filters = Filters(n_filters=10,
