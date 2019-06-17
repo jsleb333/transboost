@@ -18,7 +18,7 @@ class Filters:
         return Filters(weights, pos)
 
 
-class WeightFromExampleGenerator:
+class FiltersGenerator:
     """
     Infinite generator of weights.
     """

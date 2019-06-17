@@ -12,18 +12,32 @@ from graal_utils import timed
 
 @timed
 @parse
-def main(m=60_000, val=10_000, da=0, dataset='mnist', center=True, reduce=True, encodings='onehot', wl='rccsparseridge',
-         n_layers=3, n_filters_per_layer=[100], top_k=5, patience=1000, resume=0, n_filters=100, fs=5, fsh=0,
-         locality=4,  bank_ratio=.05, fn='c', seed=101, nl='maxpool', maxpool=8, device='cpu', margin=2,
-         max_round=1000):
-    print(n_filters_per_layer)
+def main(m=60_000, val=10_000, dataset='mnist', center=True, reduce=True,
+         encodings='onehot', wl='ridge',
+         fs=5, fsh=0, n_layers=1, n_filters_per_layer=[10],
+         bank_ratio=.05, fn='c',
+         loc=3, degrees=0, scale=.0, shear=0, margin=2, nt=1,
+         nl='maxpool', maxpool=8,
+         max_round=1000, patience=1000, resume=0,
+         device='cpu', seed=101,
+         ):
+
+    # Seed
     if seed:
         torch.manual_seed(seed)
         np.random.seed(seed)
 
-    (Xtr, Ytr), (X_val, Y_val), (Xts, Yts), filter_bank = \
-        get_train_valid_test_bank(
-            dataset='mnist', valid=val, center=False, reduce=False, shuffle=seed, n_examples=m, bank_ratio=bank_ratio)
+    # Data preparation
+    (Xtr, Ytr), (X_val, Y_val), (Xts, Yts), filter_bank = get_train_valid_test_bank(
+        dataset=dataset,
+        valid=val,
+        center=center,
+        reduce=center,
+        shuffle=seed,
+        n_examples=m,
+        bank_ratio=bank_ratio,
+        device=device
+    )
 
     # Choice of encoder
     if encodings == 'onehot':
@@ -42,17 +56,9 @@ def main(m=60_000, val=10_000, da=0, dataset='mnist', center=True, reduce=True, 
     kwargs = {}
 
     if wl == 'ridge':
-        weak_learner = WLThresholdedRidge(threshold=.5)
-
-    elif wl.startswith('rcc') or wl.startswith('rlc'):
-        if device.startswith('cuda'):
-            Xtr = RandomConvolution.format_data(Xtr).to(device=device)
-            X_val = RandomConvolution.format_data(X_val).to(device=device)
-            Xts = RandomConvolution.format_data(Xts).to(device=device)
-
         filename += f'-nf={n_filters}-fs={fs}'
         if fsh: filename += f'_to_{fsh}'
-        if wl.startswith('rlc'): filename += f'-loc={locality}'
+        if loc != -1: filename += f'-loc={locality}'
 
         activation = None
         if 'maxpool' in nl:
@@ -64,7 +70,7 @@ def main(m=60_000, val=10_000, da=0, dataset='mnist', center=True, reduce=True, 
             filename += f'-sigmoid'
             activation = torch.sigmoid
 
-        filename += '-from_bank'
+        filename += '-bank'
 
         if fn:
             filename += f'_{fn}'

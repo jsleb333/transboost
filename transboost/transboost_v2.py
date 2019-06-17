@@ -6,7 +6,7 @@ from transboost.callbacks import CallbacksManagerIterator, Step,\
     ModelCheckpoint, CSVLogger, Progression, BestRoundTrackerCallback,\
     BreakOnMaxStepCallback, BreakOnPerfectTrainAccuracyCallback,\
     BreakOnPlateauCallback, BreakOnZeroRiskCallback
-from transboost.utils import *
+from transboost.utils import FiltersGenerator
 from transboost.quadboost import BoostingRound, QuadBoostMHCR, QuadBoostMH
 from torch.nn import functional as F
 from transboost.aggregation_mechanism import TransformInvariantFeatureAggregation as Tifa

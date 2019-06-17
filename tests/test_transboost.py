@@ -2,7 +2,7 @@ import pytest
 import torch
 import numpy
 from transboost.transboost_v2 import *
-from transboost.utils.weight_from_example_generator import Filters, WeightFromExampleGenerator
+from transboost.utils.weight_from_example_generator import Filters, FiltersGenerator
 
 
 @pytest.fixture()
@@ -23,7 +23,7 @@ n_transforms = 9
 
 @pytest.fixture()
 def w_gen(examples):
-    return WeightFromExampleGenerator(examples, n_transforms=n_transforms)
+    return FiltersGenerator(examples, n_transforms=n_transforms)
 
 
 class Testtransboost:
@@ -54,4 +54,3 @@ class Testtransboost:
         assert len(mlf[2].affine_transforms) == 2
         assert len(mlf[2].affine_transforms[0]) == 3
         assert len(mlf[2].affine_transforms[0][0]) == n_transforms
-
