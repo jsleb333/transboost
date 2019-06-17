@@ -17,7 +17,6 @@ class Filters:
         self.pos = [(4, 4)]*n_filters
         self.affine_transforms = [[[random_affine(rotation=15, scale_x=.1, shear_x=10, scale_y=.1, shear_y=10, center=(4,4), angle_unit='degrees') for _ in range(n_channels)] for _ in range(n_transforms)] for _ in range(n_filters)]
 
-
 class TestTransformInvariantFeatureAggregation:
     def test_call(self):
         filters = Filters()

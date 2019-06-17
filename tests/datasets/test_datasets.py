@@ -11,6 +11,7 @@ def test_mnist_can_be_found():
     print(mnist_path)
     assert os.path.exists(mnist_path)
 
+
 def test_cifar10_can_be_found():
     assert os.path.exists(cifar10_path)
 

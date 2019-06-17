@@ -9,20 +9,16 @@ from transboost.callbacks import CallbacksManagerIterator, Step,\
 from transboost.utils import *
 from transboost.quadboost import BoostingRound, QuadBoostMHCR, QuadBoostMH
 from torch.nn import functional as F
-
-
-class Filters:
-    def __init__(self, weights, affine_transforms = []):
-        self.weights = weights
-        self.affine_transforms = affine_transforms
+from transboost.aggregation_mechanism import TransformInvariantFeatureAggregation as Tifa
 
 
 class TransBoost:
-    def __init__(self, filter_bank, weak_learner, encoder=None, n_filters_per_layer=100, n_layers=3,
-                 f0=None, patience=None, break_on_perfect_train_acc=False, callbacks=None):
+    def __init__(self, filters_generator, weak_learner, encoder=None,
+                 n_filters_per_layer=100, n_layers=3, f0=None,
+                 patience=None, break_on_perfect_train_acc=False, callbacks=None):
         """
         Args:
-            filter_bank (Array of shape (n_examples, n_channels, height, width)): Bank of examples in which filters are drawn.
+            filters_generator (WeightFromBankGenerator object): Objects that generates filters from a bank of examples.
 
             weak_learner (Object that defines the 'fit' method and the 'predict' method): Weak learner that generates weak predictors to be boosted on.
 
@@ -37,8 +33,7 @@ class TransBoost:
             callbacks (Iterable of Callback objects, optional, default=None): Callbacks objects to be called at some specific step of the training procedure to execute something. Ending conditions of the boosting iteration are handled with BreakCallbacks. If callbacks contains BreakCallbacks and terminating conditions (max_round_number, patience, break_on_perfect_train_acc) are not None, all conditions will be checked at each round and the first that is not verified will stop the iteration.
 
         """
-
-        self.filter_bank = filter_bank
+        self.filters_generator = filters_generator
         self.weak_learner = weak_learner
         self.encoder = encoder
         self.callbacks = []
@@ -118,9 +113,9 @@ class TransBoost:
         starting_round = BoostingRound(len(self.weak_predictors))
         boost_manager = CallbacksManagerIterator(self, self.callbacks, starting_round)
 
-        algo = self.algorithm(boost_manager, self.encoder, self.weak_learner,
+        algo = self.algorithm(boost_manager, self.encoder, self.weak_learner, self.filters_generator,
                                  X, Y, residue, weights, encoded_Y_pred,
-                                 X_val, Y_val, encoded_Y_val_pred)
+                                 X_val, Y_val, encoded_Y_val_pred, self.n_filters_per_layer, self.n_layers)
         algo.fit(self.weak_predictors, self.filters, **weak_learner_fit_kwargs)
 
     def predict(self, X, mode='best'):
@@ -155,12 +150,10 @@ class TransBoost:
 
 
 class TransBoostAlgorithm:
-    n_filters_per_layer: list()
-
-    def __init__(self, boost_manager, encoder, weak_learner, filter_bank,
+    def __init__(self, boost_manager, encoder, weak_learner, filters_generator,
                  X, Y, residue, weights, encoded_Y_pred,
                  X_val, Y_val, encoded_Y_val_pred,
-                 n_filters_per_layer, n_layers=3):
+                 n_filters_per_layer=list(), n_layers=3):
         self.boost_manager = boost_manager
         self.encoder = encoder
         self.weak_learner = weak_learner
@@ -169,7 +162,7 @@ class TransBoostAlgorithm:
         self.X_val, self.Y_val = X_val, Y_val
         self.encoded_Y_pred = encoded_Y_pred
         self.encoded_Y_val_pred = encoded_Y_val_pred
-        self.filter_bank = filter_bank
+        self.filters_generator = filters_generator
         self.n_filters_per_layer = n_filters_per_layer
         self.n_layers = n_layers
 
@@ -187,7 +180,7 @@ class TransBoostAlgorithm:
         """
         with self.boost_manager:  # boost_manager handles callbacks and terminating conditions
             for boosting_round in self.boost_manager:
-                this_round_filters = get_multi_layers_filters(self.filter_bank, self.n_filters_per_layer)
+                this_round_filters = get_multi_layers_filters(self.filters_generator, self.n_filters_per_layer)
                 S = get_multi_layers_random_features(self.X, this_round_filters)
                 weak_predictor = self.weak_learner().fit(S, self.residue, self.weights, **weak_learner_fit_kwargs)
                 weak_prediction = weak_predictor.predict(S)
@@ -211,48 +204,40 @@ class TransBoostAlgorithm:
 def advance_to_the_next_layer(X, filters):
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
-    nf, ch, width, height = filters.weights.shape
-    output = F.conv2d(X, filters.weights)
-    # output.shape -> (n_examples, n_filters, conv_height, conv_width)
-    # output = F.max_pool2d(output, (2,2), ceil_mode=True)
-    # F.relu(output, inplace=True)
-    # output = torch.tanh(output)  # , inplace=True)
-    return output
+    next_layer = F.conv2d(X, filters.weights)
+    # n_filters, n_channels, width, height = filters.weights.shape
+    # next_layer.shape -> (n_examples, n_filters, conv_height, conv_width)
+    # next_layer = F.max_pool2d(next_layer, (2,2), ceil_mode=True)
+    # F.relu(next_layer, inplace=True)
+    # next_layer = torch.tanh(next_layer)  # , inplace=True)
+    return next_layer
 
 
-def get_multi_layers_filters(filter_bank, n_filters_per_layer):
-    # draw an array of filters Object
-    filters = generate_filters_from_bank(filter_bank, sum(n_filters_per_layer))
-    multi_layer_filters = []
-    multi_layer_filters.append(torch.Tensor(filters[:n_filters_per_layer[0]]))
+def get_multi_layers_filters(filters_generator: WeightFromBankGenerator, n_filters_per_layer):
+    # filters_generator first contains the the examples from the original examples distributon
+    # draw numbers representing the examples that will generate filters
+    examples = filters_generator.draw_n_examples_from_bank(sum(n_filters_per_layer))
+    first_layer_filters = filters_generator.generate_filters(examples[:n_filters_per_layer[0]])
+    multi_layer_filters = [first_layer_filters]
+    examples = examples[n_filters_per_layer[0]:]
 
-    filters = filters[n_filters_per_layer[0]:]
-    for i, n_filters in enumerate(n_filters_per_layer[1:], 1):
-        filters = advance_to_the_next_layer(multi_layer_filters[i - 1], filters)
-        multi_layer_filters.append(torch.Tensor(filters[:n_filters]))
-        filters = filters[n_filters:]
+    for i, n_filters in enumerate(n_filters_per_layer[1:]):
+        examples = advance_to_the_next_layer(examples, multi_layer_filters[i])
+        next_layer_filters = filters_generator.generate_filters(examples[:n_filters])
+        multi_layer_filters.append(next_layer_filters)
+        examples = examples[n_filters:]
+
     return multi_layer_filters
-
-
-def g_function(X, W):
-    pass
-
-
-def generate_filters_from_bank(filter_bank, n_filters, i_max, j_max):
-    i, j = (np.random.randint(i_max, j_max))
-
-
-def draw_random_affine_transformations(n_transform):
-    pass
 
 
 def get_multi_layers_random_features(examples, filters):
     S = []
+    tifa = Tifa()
     for i in range(len(filters)):
         if i == 0:
             X = examples
         else:
             X = advance_to_the_next_layer(X, filters[i - 1])
-        S.append(g_function(X, filters[i]))
-    S = torch.cat(S)  # TODO: trouver la bonne fonction pour concatener les tenseurs dans la bonne dim
+        S.append(tifa(X, filters[i]))
+    S = torch.cat(S, dim=0)
     return S
