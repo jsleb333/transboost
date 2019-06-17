@@ -2,7 +2,7 @@ import pytest
 import torch
 import numpy
 from transboost.transboost_v2 import *
-from transboost.utils.weight_from_example_generator import Filters, FiltersGenerator
+from transboost.utils import Filters, FiltersGenerator
 
 
 @pytest.fixture()
@@ -35,22 +35,22 @@ class Testtransboost:
         assert new_X.shape == (10, 3, 16, 16)
 
     def test_get_multi_layers_filters(self, w_gen):
-        n_filters_per_layer = [3, 3, 2]
+        n_filters_per_layer = [4, 6, 2]
         mlf = get_multi_layers_filters(w_gen, n_filters_per_layer)
-        assert mlf[0].weights.shape == (3, 1, 5, 5)
-        assert len(mlf[0].pos) == 3
-        assert len(mlf[0].affine_transforms) == 3
+        assert mlf[0].weights.shape == (4, 1, 5, 5)
+        assert len(mlf[0].pos) == 4
+        assert len(mlf[0].affine_transforms) == 4
         assert len(mlf[0].affine_transforms[0]) == 1
         assert len(mlf[0].affine_transforms[0][0]) == n_transforms
 
-        assert mlf[1].weights.shape == (3, 3, 5, 5)
-        assert len(mlf[1].pos) == 3
-        assert len(mlf[1].affine_transforms) == 3
-        assert len(mlf[1].affine_transforms[0]) == 3
+        assert mlf[1].weights.shape == (6, 4, 5, 5)
+        assert len(mlf[1].pos) == 6
+        assert len(mlf[1].affine_transforms) == 6
+        assert len(mlf[1].affine_transforms[0]) == 4
         assert len(mlf[1].affine_transforms[0][0]) == n_transforms
 
-        assert mlf[2].weights.shape == (2, 3, 5, 5)
+        assert mlf[2].weights.shape == (2, 6, 5, 5)
         assert len(mlf[2].pos) == 2
         assert len(mlf[2].affine_transforms) == 2
-        assert len(mlf[2].affine_transforms[0]) == 3
+        assert len(mlf[2].affine_transforms[0]) == 6
         assert len(mlf[2].affine_transforms[0][0]) == n_transforms
