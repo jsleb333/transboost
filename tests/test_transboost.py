@@ -35,7 +35,7 @@ class Testtransboost:
         assert new_X.shape == (10, 3, 16, 16)
 
     def test_get_multi_layers_filters(self, w_gen):
-        n_filters_per_layer = [4, 6, 2]
+        n_filters_per_layer = [3, 3, 2]
         mlf = get_multi_layers_filters(w_gen, n_filters_per_layer)
         assert mlf[0].weights.shape == (3, 1, 5, 5)
         assert len(mlf[0].pos) == 3
@@ -49,7 +49,7 @@ class Testtransboost:
         assert len(mlf[1].affine_transforms[0]) == n_transforms
         assert len(mlf[1].affine_transforms[0][0]) == 3
 
-        assert mlf[2].weights.shape == (2, 6, 5, 5)
+        assert mlf[2].weights.shape == (2, 3, 5, 5)
         assert len(mlf[2].pos) == 2
         assert len(mlf[2].affine_transforms) == 2
         assert len(mlf[2].affine_transforms[0]) == n_transforms
