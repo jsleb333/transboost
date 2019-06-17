@@ -17,7 +17,7 @@ def main(m=60_000, val=10_000, dataset='mnist', center=True, reduce=True,
          fs=5, fsh=0, n_layers=1, n_filters_per_layer=[10],
          bank_ratio=.05, fn='c',
          loc=3, rot=0, scale=.0, shear=0, margin=2, nt=1,
-         nl='maxpool', maxpool=8,
+         nl='maxpool', maxpool=-1,
          max_round=1000, patience=1000, resume=0,
          device='cpu', seed=101,
          ):
@@ -63,7 +63,11 @@ def main(m=60_000, val=10_000, dataset='mnist', center=True, reduce=True,
 
         filename += f'-nfperlayer={n_filters_per_layer}'
         filename += f'-fs={fs}'
-        if fsh: filename += f'_to_{fsh}'
+        if fsh:
+            filename += f'_to_{fsh}'
+            fs = (fs, fhs)
+        else:
+            fs = (fs, fs)
         if loc != -1: filename += f'-loc={loc}'
 
         activation = None
@@ -89,8 +93,8 @@ def main(m=60_000, val=10_000, dataset='mnist', center=True, reduce=True,
         if 'r' in fn:
             f_proc.append(reduce_weight)
 
-        filters_generator = FiltersGenerator(filter_bank, rotation=rot, scale=scale, shear=shear, n_transforms=nt, margin=margin)
-        weak_learner = Ridge
+        filters_generator = FiltersGenerator(filter_bank, filters_shape=fs, rotation=rot, scale=scale, shear=shear, n_transforms=nt, margin=margin)
+        weak_learner = WLRidge
 
     else:
         raise ValueError(f'Invalid weak learner name: "{wl}".')
@@ -112,12 +116,14 @@ def main(m=60_000, val=10_000, dataset='mnist', center=True, reduce=True,
     ### Fitting the model
     if not resume:
         logging.info(f'Beginning fit with filters per layers={n_filters_per_layer} and patience={patience}.')
-        qb = TransBoost(filters_generator, weak_learner, encoder=encoder, callbacks=callbacks)
-        qb.fit(Xtr, Ytr, patience=patience,
-               n_filters_per_layer=n_filters_per_layer, n_layers=n_layers,
-               X_val=X_val, Y_val=Y_val,
-               callbacks=callbacks,
-               **kwargs)
+        qb = TransBoost(filters_generator,
+                        weak_learner,
+                        encoder=encoder,
+                        patience=patience,
+                        n_filters_per_layer=n_filters_per_layer,
+                        n_layers=n_layers,
+                        callbacks=callbacks)
+        qb.fit(Xtr, Ytr, X_val=X_val, Y_val=Y_val, **kwargs)
     ### Or resume fitting a model
     else:
         logging.info(f'Resuming fit with max_round_number={max_round}.')
