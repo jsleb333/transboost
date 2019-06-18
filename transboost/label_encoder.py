@@ -15,7 +15,7 @@ class LabelEncoder:
         self.labels = sorted([label for label in self.labels_encoding])
 
         self.labels_to_idx = {label:idx for idx, label in enumerate(self.labels)}
-        
+
         self.n_classes = len(self.labels)
         self.encoding_dim = len(self.labels_encoding[self.labels[0]])
 
@@ -23,7 +23,6 @@ class LabelEncoder:
         self.weights_matrix = np.abs(self.encoding_matrix)/np.sum(np.abs(self.encoding_matrix), axis=1).reshape(-1,1)
 
         self.encoding_score_type = encoding_score_type
-
 
     def encode_labels(self, Y):
         """
@@ -38,9 +37,8 @@ class LabelEncoder:
 
             encoded_Y[i] = self.encoding_matrix[label_idx]
             weights[i] = self.weights_matrix[label_idx]
-        
-        return encoded_Y, weights
 
+        return encoded_Y, weights
 
     def decode_labels(self, encoded_Y):
         """
@@ -59,7 +57,6 @@ class LabelEncoder:
 
         return decoded_Y
 
-
     def encoding_score(self, encoded_Y):
         """
         encoded_Y (Array of shape (n_examples, encoding_dim)): Array of encoded labels. It can contain real numbers, for instance in the case where encoded_Y are predictions.
@@ -69,7 +66,7 @@ class LabelEncoder:
         Returns an array of shape (n_examples, n_classes) of the scores where the max of each row represents the most likely class.
 
         'quadratic' type solves the following: -(f - Y)² * W . U
-            where   
+            where
                 f is the prediction of a label 'encoded_Y'. Shape: (n_examples, encoding_dim, 1)
                 Y is the matrix of label encodings. Shape: (1, encoding_dim, n_classes)
                 W is the matrix of weights of the encodings. Shape: (1, encoding_dim, n_classes)
@@ -94,7 +91,6 @@ class LabelEncoder:
         elif self.encoding_score_type == 'scalar':
             score = scalar_prod
         return score
-
 
     @staticmethod
     def load_encodings(encoding_name, filepath='./encodings/encodings.json', convert_to_int=False):
@@ -161,10 +157,9 @@ class AllPairsEncoder(LabelEncoder):
         encoding_dim = int(n_classes*(n_classes-1)/2)
         labels_encoding = {label:np.zeros(encoding_dim) for label in labels}
         idx_to_pairs = [(i,j) for i in range(n_classes) for j in range(i+1, n_classes)]
-        
+
         for idx, (i, j) in enumerate(idx_to_pairs):
             labels_encoding[labels[i]][idx] = 1
             labels_encoding[labels[j]][idx] = -1
 
         super().__init__(labels_encoding)
-        
