@@ -10,11 +10,9 @@ class DummyModel:
     def __init__(self, model_param=1):
         self.model_param = model_param
         self.weak_predictors = []
-        self.weak_predictors_weights = []
 
     def update_model(self, value):
         self.weak_predictors.append(value)
-        self.weak_predictors_weights.append(value)
 
 class TestModelCheckpoint:
     def setup_method(self, mtd):
@@ -43,7 +41,6 @@ class TestModelCheckpoint:
             loaded_model = pkl.load(model_file)
 
         assert not hasattr(loaded_model, 'weak_predictors')
-        assert not hasattr(loaded_model, 'weak_predictors_weights')
         assert loaded_model.model_param == 3
 
     def test_dump_update(self):
@@ -55,7 +52,7 @@ class TestModelCheckpoint:
         with open(self.update_path, 'rb') as update_file:
             loaded_update = pkl.load(update_file)
 
-        assert loaded_update == (4,4)
+        assert loaded_update == 4
 
     def test_erase_old_model_save(self):
         self.ckpt.on_iteration_begin()
@@ -99,7 +96,6 @@ class TestModelCheckpoint:
 
         loaded_model = ModelCheckpoint.load_model('test1')
         assert loaded_model.weak_predictors == [4,4]
-        assert loaded_model.weak_predictors_weights == [4,4]
 
         os.remove('./test1.model.ckpt')
         os.remove('./test1.update.ckpt')

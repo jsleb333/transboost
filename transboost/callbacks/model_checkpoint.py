@@ -39,7 +39,7 @@ class ModelCheckpoint(Callback):
 
     def dump_update(self):
         with open(self.filedir+'.update.ckpt', mode='ab') as update_file:
-            update = (self.manager.caller.weak_predictors[-1])
+            update = self.manager.caller.weak_predictors[-1]
             pkl.dump(update, update_file)
 
     def on_iteration_begin(self):
@@ -74,15 +74,13 @@ class ModelCheckpoint(Callback):
         with open(os.path.join(dirname, filename + '.model.ckpt'), 'rb') as model_file:
             model = pkl.load(model_file)
             model.weak_predictors = []
-            model.weak_predictors_weights = []
 
         with open(os.path.join(dirname, filename + '.update.ckpt'), 'rb') as update_file:
             update_file.seek(-1,2)     # go to the file end.
             end_of_file = update_file.tell()   # get the end of file location
             update_file.seek(0,0)
             while update_file.tell() < end_of_file:
-                (wp, wpw) = pkl.load(update_file)
+                wp = pkl.load(update_file)
                 model.weak_predictors.append(wp)
-                model.weak_predictors_weights.append(wpw)
 
         return model
