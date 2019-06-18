@@ -240,6 +240,5 @@ def get_multi_layers_random_features(examples, filters):
         else:
             X = advance_to_the_next_layer(X, filters[i - 1])
         S.append(tifa(X, filters[i]))
-    print(S[0].shape)
     S = torch.cat(S, dim=1)
     return S
