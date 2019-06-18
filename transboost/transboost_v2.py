@@ -187,16 +187,17 @@ class TransBoostAlgorithm:
                 self.residue -= weak_prediction
                 weak_predictors.append(weak_predictor)
                 filters.append(this_round_filters)
-                self._evaluate_round(boosting_round, weak_prediction, weak_predictor)
+                self._evaluate_round(boosting_round, weak_prediction, weak_predictor, this_round_filters)
 
-    def _evaluate_round(self, boosting_round, weak_prediction, weak_predictor):
+    def _evaluate_round(self, boosting_round, weak_prediction, weak_predictor, filters):
         self.encoded_Y_pred += weak_prediction
         Y_pred = self.encoder.decode_labels(self.encoded_Y_pred)
         boosting_round.train_acc = accuracy_score(y_true=self.Y, y_pred=Y_pred)
         boosting_round.risk = np.sum(self.weights * self.residue**2)
 
         if not (self.X_val is None or self.Y_val is None or self.encoded_Y_val_pred is None):
-            self.encoded_Y_val_pred += weak_predictor.predict(self.X_val)
+            S = get_multi_layers_random_features(self.X_val, filters)
+            self.encoded_Y_val_pred += weak_predictor.predict(S)
             Y_val_pred = self.encoder.decode_labels(self.encoded_Y_val_pred)
             boosting_round.valid_acc = accuracy_score(y_true=self.Y_val, y_pred=Y_val_pred)
 

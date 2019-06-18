@@ -35,13 +35,11 @@ class ModelCheckpoint(Callback):
         with open(self.filedir+'.model.ckpt', mode='wb') as model_file:
             shallow_copy_of_model = copy(self.manager.caller)
             del shallow_copy_of_model.weak_predictors
-            del shallow_copy_of_model.weak_predictors_weights
             pkl.dump(shallow_copy_of_model, model_file)
 
     def dump_update(self):
         with open(self.filedir+'.update.ckpt', mode='ab') as update_file:
-            update = (self.manager.caller.weak_predictors[-1],
-                    self.manager.caller.weak_predictors_weights[-1])
+            update = (self.manager.caller.weak_predictors[-1])
             pkl.dump(update, update_file)
 
     def on_iteration_begin(self):
