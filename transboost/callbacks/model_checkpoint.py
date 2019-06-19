@@ -35,11 +35,14 @@ class ModelCheckpoint(Callback):
         with open(self.filedir+'.model.ckpt', mode='wb') as model_file:
             shallow_copy_of_model = copy(self.manager.caller)
             del shallow_copy_of_model.weak_predictors
+            del shallow_copy_of_model.filters
             pkl.dump(shallow_copy_of_model, model_file)
 
     def dump_update(self):
         with open(self.filedir+'.update.ckpt', mode='ab') as update_file:
-            update = self.manager.caller.weak_predictors[-1]
+            update = (self.manager.caller.weak_predictors[-1],
+                      self.manager.caller.filters[-1],
+                      self.manager.caller.best_round)
             pkl.dump(update, update_file)
 
     def on_iteration_begin(self):
@@ -47,40 +50,46 @@ class ModelCheckpoint(Callback):
         if not self.resume_fit:
             if os.path.exists(self.filedir):
                 os.remove(self.filedir)
+        self.dump_model()
 
     def on_step_end(self):
-        self.rename_old_update_save()
+        self.rename_old_save()
         self.dump_update()
 
-        self.dump_model()
-        self.erase_old_model_save()
-
-    def rename_old_update_save(self):
+    def rename_old_save(self):
         if self.filedir != self.old_filedir:
             try:
                 os.rename(self.old_filedir+'.update.ckpt', self.filedir+'.update.ckpt')
-            except FileNotFoundError: pass
-
-    def erase_old_model_save(self):
-        if self.filedir != self.old_filedir:
+            except FileNotFoundError:
+                pass
             try:
-                os.remove(self.old_filedir + '.model.ckpt')
-            except FileNotFoundError: pass
+                os.rename(self.old_filedir+'.model.ckpt', self.filedir+'.model.ckpt')
+            except FileNotFoundError:
+                pass
 
-        self.old_filedir = self.filedir
+    # def erase_old_model_save(self):
+    #     if self.filedir != self.old_filedir:
+    #         try:
+    #             os.remove(self.old_filedir + '.model.ckpt')
+    #         except FileNotFoundError: pass
+
+    #     self.old_filedir = self.filedir
 
     @staticmethod
     def load_model(filename, dirname='.'):
         with open(os.path.join(dirname, filename + '.model.ckpt'), 'rb') as model_file:
             model = pkl.load(model_file)
             model.weak_predictors = []
+            model.filters = []
 
         with open(os.path.join(dirname, filename + '.update.ckpt'), 'rb') as update_file:
             update_file.seek(-1,2)     # go to the file end.
             end_of_file = update_file.tell()   # get the end of file location
             update_file.seek(0,0)
             while update_file.tell() < end_of_file:
-                wp = pkl.load(update_file)
+                (wp, f, best_round) = pkl.load(update_file)
                 model.weak_predictors.append(wp)
+                model.filters.append(f)
+                model.best_round = best_round
 
         return model
