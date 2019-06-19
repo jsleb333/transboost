@@ -21,8 +21,8 @@ class WLRidge(_WeakLearnerBase, Ridge):
         X = X.reshape((X.shape[0], -1))
         if self.encoder != None:
             Y, W = self.encoder.encode_labels(Y)
-        if W is not None:
-            Y *= np.sqrt(W)
+        # if W is not None:
+            # Y *= np.sqrt(W)
         return super(Ridge, self).fit(X, Y, **kwargs)
 
     def predict(self, X, **kwargs):
