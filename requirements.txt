@@ -5,3 +5,5 @@ torchvision
 numpy
 scikit-learn
 matplotlib
+sacred
+pymongo

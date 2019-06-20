@@ -205,7 +205,8 @@ class TransBoostAlgorithm:
 def advance_to_the_next_layer(X, filters):
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
-    next_layer = F.conv2d(X, filters.weights)
+    weights = filters.weights.to(device=X.device)
+    next_layer = F.conv2d(X, weights)
     # n_filters, n_channels, width, height = filters.weights.shape
     # next_layer.shape -> (n_examples, n_filters, conv_height, conv_width)
     # next_layer = F.max_pool2d(next_layer, (2,2), ceil_mode=True)

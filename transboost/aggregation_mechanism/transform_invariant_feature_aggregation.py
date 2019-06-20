@@ -44,7 +44,7 @@ class TransformInvariantFeatureAggregation:
             transformed_weights = self._transform_weights(weights, ats, pad)
             # transformed_weights.shape: (n_transforms, n_ch, filter_height+pad, filter_width+pad)
             self.n_transforms, *_ = transformed_weights.shape
-            transformed_weights.to(device=X.device)
+            transformed_weights = transformed_weights.to(device=X.device)
 
             ROI = self._get_region_of_interest(X, weights, *pos)
 
