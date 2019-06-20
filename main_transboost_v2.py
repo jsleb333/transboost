@@ -1,8 +1,6 @@
 import torch
 import logging
 
-from sacred import Experiment
-from sacred.observers import MongoObserver
 from transboost.transboost_v2 import TransBoost
 from transboost.label_encoder import LabelEncoder, OneHotEncoder, AllPairsEncoder
 from transboost.weak_learner import *
@@ -11,47 +9,18 @@ from transboost.datasets import get_train_valid_test_bank, MNISTDataset, CIFAR10
 from transboost.utils import parse, FiltersGenerator, Filters
 from graal_utils import timed
 
-ex = Experiment()
 
-ex.observers.append(MongoObserver.create(url='mongodb://mongo_user:mongo_password@127.0.0.1:27017',
-                                         db_name='sacred'))
-
-
-@ex.config
-def my_config():
-    m = 60_000
-    val = 10_000
-    dataset = 'mnist'
-    center = True
-    reduce = True
-    encodings = 'onehot'
-    wl = 'ridge'
-    fs = 5
-    fsh = 0
-    n_layers = 3
-    n_filters_per_layer = [30]
-    bank_ratio = .05
-    fn = 'c',
-    loc = 3
-    rot = 15
-    scale = .1
-    shear = 12
-    margin = 2
-    nt = 20
-    nl = 'maxpool'
-    maxpool = -1
-    max_round = 1000
-    patience = 1000
-    resume = 0
-    device = 'cuda'
-    seed = 101
-
-
-@ex.automain
-def main(m, val, dataset, center, reduce, encodings, wl, fs, fsh, n_layers, n_filters_per_layer,
-         bank_ratio, fn, loc, rot, scale, shear, margin, nt, nl, maxpool, max_round, patience,
-         resume, device, seed):
-    logging.basicConfig(level=logging.INFO, style='{', format='[{levelname}] {message}')
+@timed
+@parse
+def main(m=60_000, val=10_000, dataset='mnist', center=True, reduce=True,
+         encodings='onehot', wl='ridge',
+         fs=5, fsh=0, n_layers=3, n_filters_per_layer=[10],
+         bank_ratio=.05, fn='c',
+         loc=3, rot=0, scale=.0, shear=0, margin=2, nt=1,
+         nl='maxpool', maxpool=-1,
+         max_round=1000, patience=1000, resume=0,
+         device='cpu', seed=101, smc=None, run_info = None
+         ):
 
     # Seed
     if seed:
@@ -76,7 +45,9 @@ def main(m, val, dataset, center, reduce, encodings, wl, fs, fsh, n_layers, n_fi
     elif encodings == 'allpairs':
         encoder = AllPairsEncoder(Ytr)
     else:
-        raise TypeError('This encoder is not supported at the moment')
+        encoder = LabelEncoder.load_encodings(encodings)
+        if all(label.isdigit() for label in encoder.labels_encoding):
+            encoder = LabelEncoder({int(label):encoding for label, encoding in encoder.labels_encoding.items()})
     logging.info(f'Encoding: {encodings}')
 
     filename = f'transboost-d={dataset}-e={encodings}-wl={wl}'
@@ -139,6 +110,8 @@ def main(m, val, dataset, center, reduce, encodings, wl, fs, fsh, n_layers, n_fi
                 logger,
                 zero_risk,
                 ]
+    if smc is not None:
+        callbacks.append(smc)
 
     logging.info(f'Filename: {filename}')
 
@@ -165,5 +138,10 @@ def main(m, val, dataset, center, reduce, encodings, wl, fs, fsh, n_layers, n_fi
     if val:
         print(f'Test accuracy on best model: {qb.evaluate(Xts, Yts):.3%}')
         print(f'Test accuracy on last model: {qb.evaluate(Xts, Yts, mode="last"):.3%}')
+    if run_info is not None:
+        run_info.add_artifact('./results/log/'+filename+'-log.csv')
 
 
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO, style='{', format='[{levelname}] {message}')
+    main(m=100, val=10)
