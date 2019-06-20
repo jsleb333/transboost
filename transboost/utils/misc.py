@@ -81,7 +81,7 @@ def compute_subplots_shape(N, aspect_ratio=9/16):
 
 
 def make_fig_axes(N, aspect_ratio=9/16):
-    n, m = compute_subplots_shape(N)
+    n, m = compute_subplots_shape(N, aspect_ratio)
     fig, axes = plt.subplots(n, m)
 
     # Reshaping axes
