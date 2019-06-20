@@ -15,7 +15,9 @@ Xtr = torch.unsqueeze(torch.from_numpy(Xtr), dim=1)
 
 # x, y = Xtr[333:340], Ytr[333:340]
 x, y = Xtr, Ytr
-x_idx = 0
+eights = [i for i, yy in enumerate(y) if yy == 8]
+print(eights)
+x_idx = 15
 n_filters = 5
 filters_shape = (5,5)
 n_layers = 4
