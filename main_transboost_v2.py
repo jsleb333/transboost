@@ -17,7 +17,6 @@ ex.observers.append(MongoObserver.create(url='mongodb://mongo_user:mongo_passwor
                                          db_name='sacred'))
 
 
-
 @ex.config
 def my_config():
     m = 60_000
@@ -30,7 +29,7 @@ def my_config():
     fs = 5
     fsh = 0
     n_layers = 3
-    n_filters_per_layer = [10]
+    n_filters_per_layer = [30]
     bank_ratio = .05
     fn = 'c',
     loc = 3
@@ -41,7 +40,7 @@ def my_config():
     nt = 20
     nl = 'maxpool'
     maxpool = -1
-    max_round = 1000,
+    max_round = 1000
     patience = 1000
     resume = 0
     device = 'cuda'

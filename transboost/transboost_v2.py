@@ -2,12 +2,10 @@ import torch
 from transboost.weak_learner import *
 from transboost.label_encoder import LabelEncoder, OneHotEncoder, AllPairsEncoder
 
-from transboost.callbacks import CallbacksManagerIterator, Step,\
-    ModelCheckpoint, CSVLogger, Progression, BestRoundTrackerCallback,\
-    BreakOnMaxStepCallback, BreakOnPerfectTrainAccuracyCallback,\
-    BreakOnPlateauCallback, BreakOnZeroRiskCallback
+from transboost.callbacks import CallbacksManagerIterator, Step, ModelCheckpoint, CSVLogger,\
+    Progression, BestRoundTrackerCallback,BreakOnMaxStepCallback, \
+    BreakOnPerfectTrainAccuracyCallback, BreakOnPlateauCallback, BreakOnZeroRiskCallback
 from transboost.utils import FiltersGenerator
-from transboost.quadboost import BoostingRound, QuadBoostMHCR, QuadBoostMH
 from torch.nn import functional as F
 from transboost.aggregation_mechanism import TransformInvariantFeatureAggregation as Tifa
 
@@ -243,3 +241,14 @@ def get_multi_layers_random_features(examples, filters):
         S.append(tifa(X, filters[i]))
     S = torch.cat(S, dim=1)
     return S
+
+
+class BoostingRound(Step):
+    """
+    Class that stores information about the current boosting round like the the round number and the training and validation accuracies. Used by the CallbacksManagerIterator in the _QuadBoostAlgorithm.fit method.
+    """
+    def __init__(self, round_number=0):
+        super().__init__(step_number=round_number)
+        self.train_acc = None
+        self.valid_acc = None
+        self.risk = None
