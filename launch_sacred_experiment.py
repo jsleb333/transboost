@@ -19,10 +19,10 @@ def my_config():
     reduce = True
     encodings = 'onehot'
     wl = 'ridge'
-    fs = 5
+    fs = 11
     fsh = 0
-    n_layers = 3
-    n_filters_per_layer = [10]
+    n_layers = 1
+    n_filters_per_layer = [200]
     bank_ratio = .05
     fn = 'c'
     loc = 3
@@ -30,7 +30,7 @@ def my_config():
     scale = .1
     shear = 15
     margin = 2
-    nt = 30
+    nt = 40
     nl = 'maxpool'
     maxpool = -1
     max_round = 1000

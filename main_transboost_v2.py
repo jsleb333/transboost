@@ -65,7 +65,7 @@ def main(m=60_000, val=10_000, dataset='mnist', center=True, reduce=True,
         filename += f'-fs={fs}'
         if fsh:
             filename += f'_to_{fsh}'
-            fs = (fs, fhs)
+            fs = (fs, fsh)
         else:
             fs = (fs, fs)
         if loc != -1: filename += f'-loc={loc}'
