@@ -13,8 +13,8 @@ from transboost.aggregation_mechanism import TransformInvariantFeatureAggregatio
 
 
 class TransBoost:
-    def __init__(self, filters_generator, weak_learner, encoder=None,
-                 n_filters_per_layer=100, n_layers=3, f0=None,
+    def __init__(self, filters_generator, weak_learner, aggregation_mechanism,
+                 encoder=None, n_filters_per_layer=100, n_layers=3, f0=None,
                  patience=None, break_on_perfect_train_acc=False, callbacks=None):
         """
         Args:
@@ -35,6 +35,7 @@ class TransBoost:
         """
         self.filters_generator = filters_generator
         self.weak_learner = weak_learner
+        self.aggregation_mechanism = aggregation_mechanism
         self.encoder = encoder
         self.callbacks = []
         self.weak_predictors = []
@@ -113,9 +114,11 @@ class TransBoost:
         starting_round = BoostingRound(len(self.weak_predictors))
         boost_manager = CallbacksManagerIterator(self, self.callbacks, starting_round)
 
-        algo = self.algorithm(boost_manager, self.encoder, self.weak_learner, self.filters_generator,
-                                 X, Y, residue, weights, encoded_Y_pred,
-                                 X_val, Y_val, encoded_Y_val_pred, self.n_filters_per_layer, self.n_layers)
+        algo = self.algorithm(boost_manager, self.encoder, self.weak_learner,
+                              self.filters_generator, self.aggregation_mechanism,
+                              X, Y, residue, weights, encoded_Y_pred,
+                              X_val, Y_val, encoded_Y_val_pred,
+                              self.n_filters_per_layer, self.n_layers)
         algo.fit(self.weak_predictors, self.filters, **weak_learner_fit_kwargs)
 
     def predict(self, X, mode='best'):
@@ -132,7 +135,7 @@ class TransBoost:
             wps = self.weak_predictors
             filters = self.filters
         for wp, f in zip(wps, filters):
-            S = get_multi_layers_random_features(X, f)
+            S = self.aggregation_mechanism(X, f)
             encoded_Y_pred += wp.predict(S)
         return encoded_Y_pred
 
@@ -151,12 +154,14 @@ class TransBoost:
 
 class TransBoostAlgorithm:
     def __init__(self, boost_manager, encoder, weak_learner, filters_generator,
+                 aggregation_mechanism,
                  X, Y, residue, weights, encoded_Y_pred,
                  X_val, Y_val, encoded_Y_val_pred,
                  n_filters_per_layer=list(), n_layers=3):
         self.boost_manager = boost_manager
         self.encoder = encoder
         self.weak_learner = weak_learner
+        self.aggregation_mechanism = aggregation_mechanism
 
         self.X, self.Y, self.residue, self.weights = X, Y, residue, weights
         self.X_val, self.Y_val = X_val, Y_val
@@ -181,7 +186,7 @@ class TransBoostAlgorithm:
         with self.boost_manager:  # boost_manager handles callbacks and terminating conditions
             for boosting_round in self.boost_manager:
                 this_round_filters = get_multi_layers_filters(self.filters_generator, self.n_filters_per_layer)
-                S = get_multi_layers_random_features(self.X, this_round_filters)
+                S = self.aggregation_mechanism(self.X, this_round_filters)
                 weak_predictor = self.weak_learner().fit(S, self.residue, self.weights, **weak_learner_fit_kwargs)
                 weak_prediction = weak_predictor.predict(S)
                 self.residue -= weak_prediction
@@ -196,7 +201,7 @@ class TransBoostAlgorithm:
         boosting_round.risk = np.sum(self.weights * self.residue**2)
 
         if not (self.X_val is None or self.Y_val is None or self.encoded_Y_val_pred is None):
-            S = get_multi_layers_random_features(self.X_val, filters)
+            S = self.aggregation_mechanism(self.X_val, filters)
             self.encoded_Y_val_pred += weak_predictor.predict(S)
             Y_val_pred = self.encoder.decode_labels(self.encoded_Y_val_pred)
             boosting_round.valid_acc = accuracy_score(y_true=self.Y_val, y_pred=Y_val_pred)
@@ -234,15 +239,24 @@ def get_multi_layers_filters(filters_generator: FiltersGenerator, n_filters_per_
     return multi_layer_filters
 
 
-def get_multi_layers_random_features(examples, filters):
-    S = []
-    tifa = Tifa()
-    for i in range(len(filters)):
-        if i == 0:
-            X = examples
-        else:
-            X = advance_to_the_next_layer(X, filters[i - 1])
-        S.append(tifa(X, filters[i]))
-    S = torch.cat(S, dim=1)
-    print(torch.max(S), torch.min(S))
-    return S
+class MultiLayersRandomFeatures:
+    def __init__(self, locality=3, maxpool_shape=(3,3), activation=None):
+        self.locality = locality
+        self.maxpool_shape = maxpool_shape
+        self.activation = activation
+
+    def __call__(self, examples, filters):
+        S = []
+        tifa = Tifa(locality=self.locality,
+                    maxpool_shape=self.maxpool_shape,
+                    activation=self.activation)
+        for i in range(len(filters)):
+            if i == 0:
+                X = examples
+            else:
+                X = advance_to_the_next_layer(X, filters[i - 1])
+            S.append(tifa(X, filters[i]))
+        S = torch.cat(S, dim=1)
+        print('S', S.shape)
+        print(torch.max(S), torch.min(S))
+        return S

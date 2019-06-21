@@ -1,7 +1,7 @@
 import torch
 import logging
 
-from transboost.transboost_v2 import TransBoost
+from transboost.transboost_v2 import TransBoost, MultiLayersRandomFeatures
 from transboost.label_encoder import LabelEncoder, OneHotEncoder, AllPairsEncoder
 from transboost.weak_learner import *
 from transboost.callbacks import *
@@ -75,7 +75,7 @@ def main(m=60_000, val=10_000, dataset='mnist', center=True, reduce=True,
             filename += f'-maxpool{maxpool}'
         if 'relu' in nl:
             filename += f'-relu'
-            activation = torch.nn.functional.relu
+            activation = torch.relu
         elif 'sigmoid' in nl:
             filename += f'-sigmoid'
             activation = torch.sigmoid
@@ -92,6 +92,10 @@ def main(m=60_000, val=10_000, dataset='mnist', center=True, reduce=True,
             f_proc.append(normalize_weight)
         if 'r' in fn:
             f_proc.append(reduce_weight)
+
+        maxpool = (maxpool, maxpool) if isinstance(maxpool, int) else maxpool
+
+        aggregation_mechanism = MultiLayersRandomFeatures(loc, maxpool, activation)
 
         filters_generator = FiltersGenerator(filter_bank, filters_shape=fs, rotation=rot, scale=scale, shear=shear, n_transforms=nt, margin=margin, filters_preprocessing=f_proc)
         weak_learner = WLRidge
@@ -119,6 +123,7 @@ def main(m=60_000, val=10_000, dataset='mnist', center=True, reduce=True,
         logging.info(f'Beginning fit with filters per layers={n_filters_per_layer} and patience={patience}.')
         qb = TransBoost(filters_generator,
                         weak_learner,
+                        aggregation_mechanism,
                         encoder=encoder,
                         patience=patience,
                         n_filters_per_layer=n_filters_per_layer,

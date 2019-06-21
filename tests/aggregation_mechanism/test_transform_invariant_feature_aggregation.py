@@ -34,16 +34,16 @@ class TestTransformInvariantFeatureAggregation:
         tifa = TransformInvariantFeatureAggregation(locality=1)
 
         filters = Filters()
-        ROI = tifa._get_region_of_interest(X, filters.weights[0], *filters.pos[0])
+        ROI = tifa._get_region_of_interest(X, filters.weights[0], 0, *filters.pos[0])
         assert ROI.shape == (n_examples, n_channels, 5, 5)
 
         filters = Filters(f_height=5, f_width=5)
-        ROI = tifa._get_region_of_interest(X, filters.weights[0], *filters.pos[0])
+        ROI = tifa._get_region_of_interest(X, filters.weights[0], 0, *filters.pos[0])
         assert ROI.shape == (n_examples, n_channels, 5, 5)
 
         filters = Filters(f_height=6, f_width=6)
         with pytest.raises(ValueError):
-            tifa._get_region_of_interest(X, filters.weights[0], *filters.pos[0])
+            tifa._get_region_of_interest(X, filters.weights[0], 0, *filters.pos[0])
 
     def test_transform_weights(self):
         filters = Filters()
