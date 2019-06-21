@@ -116,32 +116,40 @@ def main(m=60_000, val=10_000, dataset='mnist', center=True, reduce=True,
     logging.info(f'Filename: {filename}')
 
     ### Fitting the model
-    if not resume:
-        logging.info(f'Beginning fit with filters per layers={n_filters_per_layer} and patience={patience}.')
-        qb = TransBoost(filters_generator,
-                        weak_learner,
-                        encoder=encoder,
-                        patience=patience,
-                        n_filters_per_layer=n_filters_per_layer,
-                        n_layers=n_layers,
-                        callbacks=callbacks)
-        qb.fit(Xtr, Ytr, X_val=X_val, Y_val=Y_val, **kwargs)
-    ### Or resume fitting a model
-    else:
-        logging.info(f'Resuming fit with max_round_number={max_round}.')
-        qb = TransBoost.load(f'results/{filename}-{resume}.ckpt')
-        qb.resume_fit(Xtr, Ytr,
-                      X_val=X_val, Y_val=Y_val,
-                      max_round_number=max_round,
-                      **kwargs)
+    try:
+        if not resume:
+            logging.info(f'Beginning fit with filters per layers={n_filters_per_layer} and patience={patience}.')
+            qb = TransBoost(filters_generator,
+                            weak_learner,
+                            encoder=encoder,
+                            patience=patience,
+                            n_filters_per_layer=n_filters_per_layer,
+                            n_layers=n_layers,
+                            callbacks=callbacks)
+            qb.fit(Xtr, Ytr, X_val=X_val, Y_val=Y_val, **kwargs)
+        ### Or resume fitting a model
+        else:
+            logging.info(f'Resuming fit with max_round_number={max_round}.')
+            qb = TransBoost.load(f'results/{filename}-{resume}.ckpt')
+            qb.resume_fit(Xtr, Ytr,
+                        X_val=X_val, Y_val=Y_val,
+                        max_round_number=max_round,
+                        **kwargs)
+    except KeyboardInterrupt:
+        pass
+
     print(f'Best round recap:\nBoosting round {qb.best_round.step_number+1:03d} | Train acc: {qb.best_round.train_acc:.3%} | Valid acc: {qb.best_round.valid_acc:.3%} | Risk: {qb.best_round.risk:.3f}')
     if val:
+        if qb.best_round.step_number == len(qb.weak_predictors):
+            print('Best round was the last one')
+        else:
+            print(f'Test accuracy on last model: {qb.evaluate(Xts, Yts, mode="last"):.3%}')
         print(f'Test accuracy on best model: {qb.evaluate(Xts, Yts):.3%}')
-        print(f'Test accuracy on last model: {qb.evaluate(Xts, Yts, mode="last"):.3%}')
+
     if run_info is not None:
         run_info.add_artifact('./results/log/'+filename+'-log.csv')
 
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, style='{', format='[{levelname}] {message}')
-    main(m=100, val=10)
+    main(m=1000, val=10)
