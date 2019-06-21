@@ -26,7 +26,7 @@ def filter_generator(examples):
     return FiltersGenerator(examples, n_transforms=n_transforms)
 
 
-class Testtransboost:
+class TestTransBoost:
     def test_get_multi_layers_random_features(self):
         pass
 
