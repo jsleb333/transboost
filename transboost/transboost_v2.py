@@ -206,6 +206,9 @@ def advance_to_the_next_layer(X, filters):
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
     next_layer = F.conv2d(X, filters.weights)
+    print('max min mean of next layer', torch.max(torch.mean(next_layer, dim=0)), torch.min(torch.mean(next_layer, dim=0)))
+    print('max min std of next layer', torch.max(torch.std(next_layer, dim=0)), torch.min(torch.std(next_layer, dim=0)))
+    # next_layer /= torch.std(next_layer, dim=0)
     # n_filters, n_channels, width, height = filters.weights.shape
     # next_layer.shape -> (n_examples, n_filters, conv_height, conv_width)
     # next_layer = F.max_pool2d(next_layer, (2,2), ceil_mode=True)
@@ -241,4 +244,5 @@ def get_multi_layers_random_features(examples, filters):
             X = advance_to_the_next_layer(X, filters[i - 1])
         S.append(tifa(X, filters[i]))
     S = torch.cat(S, dim=1)
+    print(torch.max(S), torch.min(S))
     return S
