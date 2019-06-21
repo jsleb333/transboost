@@ -1,6 +1,3 @@
-import torch
-import logging
-
 from sacred import Experiment
 from sacred.observers import MongoObserver
 from main_transboost_v2 import main
@@ -15,8 +12,8 @@ ex.observers.append(MongoObserver.create(url='mongodb://mongo_user:mongo_passwor
 
 @ex.config
 def my_config():
-    m = 300
-    val = 10
+    m = 60000
+    val = 6000
     dataset = 'mnist'
     center = True
     reduce = True
@@ -24,16 +21,16 @@ def my_config():
     wl = 'ridge'
     fs = 5
     fsh = 0
-    n_layers = 1
+    n_layers = 3
     n_filters_per_layer = [10]
     bank_ratio = .05
-    fn = 'c',
+    fn = 'c'
     loc = 3
     rot = 15
     scale = .1
-    shear = 12
+    shear = 15
     margin = 2
-    nt = 20
+    nt = 30
     nl = 'maxpool'
     maxpool = -1
     max_round = 1000
