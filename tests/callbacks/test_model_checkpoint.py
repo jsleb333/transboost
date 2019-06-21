@@ -59,20 +59,6 @@ class TestModelCheckpoint:
 
         assert loaded_update == (4, 5, 6)
 
-    # def test_erase_old_model_save(self):
-    #     self.ckpt.on_iteration_begin()
-    #     self.ckpt.dump_model()
-    #     next(self.ckpt.manager.step)
-
-    #     self.model.model_param = 3
-    #     self.ckpt.dump_model()
-    #     # self.ckpt.erase_old_model_save()
-
-    #     assert not os.path.exists('./test0.model.ckpt')
-    #     assert os.path.exists('./test1.model.ckpt')
-
-    #     os.remove('./test1.model.ckpt')
-
     def test_rename_old_save(self):
         self.ckpt.on_iteration_begin()
         self.model.update_model(4, 5, 6)
@@ -89,6 +75,7 @@ class TestModelCheckpoint:
         assert os.path.exists('./test1.update.ckpt')
 
         os.remove('./test1.update.ckpt')
+        os.remove('./test1.model.ckpt')
 
     def test_load_model(self):
         self.ckpt.on_iteration_begin()
