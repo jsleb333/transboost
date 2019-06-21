@@ -45,7 +45,6 @@ def bool_parse(arg):
 
 
 def list_parse(list_type):
-    print(list_type)
     def _list_parse(arg):
         arg = arg.replace('[', '').replace(']','')
         arg = arg.split(',')

@@ -32,7 +32,7 @@ def main(m=60_000, val=10_000, dataset='mnist', center=True, reduce=True,
         dataset=dataset,
         valid=val,
         center=center,
-        reduce=center,
+        reduce=reduce,
         shuffle=seed,
         n_examples=m,
         bank_ratio=bank_ratio,
@@ -106,10 +106,11 @@ def main(m=60_000, val=10_000, dataset='mnist', center=True, reduce=True,
     ckpt = ModelCheckpoint(filename=filename+'-{round}.ckpt', dirname='./results')
     logger = CSVLogger(filename=filename+'-log.csv', dirname='./results/log')
     zero_risk = BreakOnZeroRiskCallback()
-    callbacks = [ckpt,
-                logger,
-                zero_risk,
-                ]
+    callbacks = [
+        # ckpt,
+        logger,
+        zero_risk,
+        ]
 
     logging.info(f'Filename: {filename}')
 
@@ -133,11 +134,11 @@ def main(m=60_000, val=10_000, dataset='mnist', center=True, reduce=True,
                       max_round_number=max_round,
                       **kwargs)
     print(f'Best round recap:\nBoosting round {qb.best_round.step_number+1:03d} | Train acc: {qb.best_round.train_acc:.3%} | Valid acc: {qb.best_round.valid_acc:.3%} | Risk: {qb.best_round.risk:.3f}')
-    if val:
-        print(f'Test accuracy on best model: {qb.evaluate(Xts, Yts):.3%}')
-        print(f'Test accuracy on last model: {qb.evaluate(Xts, Yts, mode="last"):.3%}')
+    # if val:
+    #     print(f'Test accuracy on best model: {qb.evaluate(Xts, Yts):.3%}')
+    #     print(f'Test accuracy on last model: {qb.evaluate(Xts, Yts, mode="last"):.3%}')
 
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, style='{', format='[{levelname}] {message}')
-    main(m=100, val=10)
+    main(m=1000, val=20, fn='c', n_layers=3)

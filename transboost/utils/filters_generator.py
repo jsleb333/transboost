@@ -85,7 +85,6 @@ class FiltersGenerator:
             weights.append(torch.unsqueeze(weight, dim=0))
             pos.append(p)
         weights = torch.cat(weights, dim=0)
-        print(torch.mean(weights))
         affine_transforms = self._generate_affine_transforms(weights, pos)
         filters = Filters(weights, pos, affine_transforms)
         return filters

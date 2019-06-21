@@ -236,8 +236,10 @@ def get_train_valid_test_bank(dataset='mnist', valid=0, center=False, reduce=Fal
         elif 'cifar' in dataset:
             data = CIFAR10Dataset.load(dataset + '.pkl')
 
-        (Xtr, Ytr), (X_val, Y_val), (Xts, Yts) = data.\
-            get_train_valid_test(valid=valid, center=center, reduce=reduce, shuffle=shuffle)
+        (Xtr, Ytr), (X_val, Y_val), (Xts, Yts) = data.get_train_valid_test(valid=valid,
+                                                                           center=center,
+                                                                           reduce=reduce,
+                                                                           shuffle=shuffle)
         Xtr, Ytr = Xtr[:n_examples], Ytr[:n_examples]
         data.fit_scaler(Xtr, center=center, reduce=reduce)
         Xtr, Ytr = data.transform_data(Xtr.reshape(Xtr.shape[0], -1), Ytr)
