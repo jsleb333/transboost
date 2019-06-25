@@ -85,7 +85,7 @@ class FiltersGenerator:
             weights.append(torch.unsqueeze(weight, dim=0))
             pos.append(p)
         weights = torch.cat(weights, dim=0)
-        affine_transforms = self._generate_affine_transforms(weights, pos)
+        affine_transforms = self._generate_affine_transforms(weights, pos, self.n_transforms)
         filters = Filters(weights, pos, affine_transforms)
         return filters
 
@@ -100,7 +100,7 @@ class FiltersGenerator:
         x = x.narrow(2, j, height)
         return x, (i, j)
 
-    def _generate_affine_transforms(self, filters_weights, filters_pos):
+    def _generate_affine_transforms(self, filters_weights, filters_pos, n_transforms):
         n_filters, n_channels, height, width = filters_weights.shape
         center = lambda top_left_corner: (top_left_corner[0] + (height - 1)/2,
                                           top_left_corner[1] + (width - 1)/2)
@@ -110,7 +110,7 @@ class FiltersGenerator:
                 [
                     self.random_affine_sampler.sample_transformation(center(pos))
                     for _ in range(n_channels)]
-                for _ in range(self.n_transforms)]
+                for _ in range(n_transforms)]
             for pos in filters_pos]
 
         return affine_transforms
