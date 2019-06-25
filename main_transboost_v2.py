@@ -19,7 +19,7 @@ def main(m=60_000, val=10_000, dataset='mnist', center=True, reduce=True,
          loc=3, rot=0, scale=.0, shear=0, margin=2, nt=1,
          nl='maxpool', maxpool=-1,
          max_round=1000, patience=1000, resume=0,
-         device='cpu', seed=101,
+         device='cpu', seed=101, smc=None, run_info = None
          ):
 
     # Seed
@@ -65,7 +65,7 @@ def main(m=60_000, val=10_000, dataset='mnist', center=True, reduce=True,
         filename += f'-fs={fs}'
         if fsh:
             filename += f'_to_{fsh}'
-            fs = (fs, fhs)
+            fs = (fs, fsh)
         else:
             fs = (fs, fs)
         if loc != -1: filename += f'-loc={loc}'
@@ -110,38 +110,49 @@ def main(m=60_000, val=10_000, dataset='mnist', center=True, reduce=True,
     ckpt = ModelCheckpoint(filename=filename+'-{round}.ckpt', dirname='./results')
     logger = CSVLogger(filename=filename+'-log.csv', dirname='./results/log')
     zero_risk = BreakOnZeroRiskCallback()
-    callbacks = [
-        # ckpt,
-        logger,
-        zero_risk,
-        ]
+    callbacks = [ckpt,
+                logger,
+                zero_risk,
+                ]
+    if smc is not None:
+        callbacks.append(smc)
 
     logging.info(f'Filename: {filename}')
 
     ### Fitting the model
-    if not resume:
-        logging.info(f'Beginning fit with filters per layers={n_filters_per_layer} and patience={patience}.')
-        qb = TransBoost(filters_generator,
-                        weak_learner,
-                        aggregation_mechanism,
-                        encoder=encoder,
-                        patience=patience,
-                        n_filters_per_layer=n_filters_per_layer,
-                        n_layers=n_layers,
-                        callbacks=callbacks)
-        qb.fit(Xtr, Ytr, X_val=X_val, Y_val=Y_val, **kwargs)
-    ### Or resume fitting a model
-    else:
-        logging.info(f'Resuming fit with max_round_number={max_round}.')
-        qb = TransBoost.load(f'results/{filename}-{resume}.ckpt')
-        qb.resume_fit(Xtr, Ytr,
-                      X_val=X_val, Y_val=Y_val,
-                      max_round_number=max_round,
-                      **kwargs)
+    try:
+        if not resume:
+            logging.info(f'Beginning fit with filters per layers={n_filters_per_layer} and patience={patience}.')
+            qb = TransBoost(filters_generator,
+                            weak_learner,
+                            aggregation_mechanism,
+                            encoder=encoder,
+                            patience=patience,
+                            n_filters_per_layer=n_filters_per_layer,
+                            n_layers=n_layers,
+                            callbacks=callbacks)
+            qb.fit(Xtr, Ytr, X_val=X_val, Y_val=Y_val, **kwargs)
+        ### Or resume fitting a model
+        else:
+            logging.info(f'Resuming fit with max_round_number={max_round}.')
+            qb = TransBoost.load(f'results/{filename}-{resume}.ckpt')
+            qb.resume_fit(Xtr, Ytr,
+                        X_val=X_val, Y_val=Y_val,
+                        max_round_number=max_round,
+                        **kwargs)
+    except KeyboardInterrupt:
+        pass
+
     print(f'Best round recap:\nBoosting round {qb.best_round.step_number+1:03d} | Train acc: {qb.best_round.train_acc:.3%} | Valid acc: {qb.best_round.valid_acc:.3%} | Risk: {qb.best_round.risk:.3f}')
-    # if val:
-    #     print(f'Test accuracy on best model: {qb.evaluate(Xts, Yts):.3%}')
-    #     print(f'Test accuracy on last model: {qb.evaluate(Xts, Yts, mode="last"):.3%}')
+    if val:
+        if qb.best_round.step_number == len(qb.weak_predictors):
+            print('Best round was the last one')
+        else:
+            print(f'Test accuracy on last model: {qb.evaluate(Xts, Yts, mode="last"):.3%}')
+        print(f'Test accuracy on best model: {qb.evaluate(Xts, Yts):.3%}')
+
+    if run_info is not None:
+        run_info.add_artifact('./results/log/'+filename+'-log.csv')
 
 
 if __name__ == '__main__':

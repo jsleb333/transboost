@@ -262,6 +262,10 @@ def get_train_valid_test_bank(dataset='mnist', valid=0, center=False, reduce=Fal
             logging.info(f'Bank size: {bank_size}')
         else:
             raise ValueError(f'Invalid bank_ratio {bank_ratio}.')
+        if device.startswith('cuda'):
+            Xtr = Xtr.to(device=device)
+            X_val = X_val.to(device=device)
+            Xts = Xts.to(device=device)
         return (Xtr, Ytr), (X_val, Y_val), (Xts, Yts), filter_bank
 
 

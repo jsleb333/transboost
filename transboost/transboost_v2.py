@@ -2,12 +2,10 @@ import torch
 from transboost.weak_learner import *
 from transboost.label_encoder import LabelEncoder, OneHotEncoder, AllPairsEncoder
 
-from transboost.callbacks import CallbacksManagerIterator, Step,\
-    ModelCheckpoint, CSVLogger, Progression, BestRoundTrackerCallback,\
-    BreakOnMaxStepCallback, BreakOnPerfectTrainAccuracyCallback,\
-    BreakOnPlateauCallback, BreakOnZeroRiskCallback
+from transboost.callbacks import CallbacksManagerIterator, Step, ModelCheckpoint, CSVLogger,\
+    Progression, BestRoundTrackerCallback,BreakOnMaxStepCallback, \
+    BreakOnPerfectTrainAccuracyCallback, BreakOnPlateauCallback, BreakOnZeroRiskCallback
 from transboost.utils import FiltersGenerator
-from transboost.quadboost import BoostingRound, QuadBoostMHCR, QuadBoostMH
 from torch.nn import functional as F
 from transboost.aggregation_mechanism import TransformInvariantFeatureAggregation as Tifa
 
@@ -210,10 +208,8 @@ class TransBoostAlgorithm:
 def advance_to_the_next_layer(X, filters):
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
-    next_layer = F.conv2d(X, filters.weights)
-    print('max min mean of next layer', torch.max(torch.mean(next_layer, dim=0)), torch.min(torch.mean(next_layer, dim=0)))
-    print('max min std of next layer', torch.max(torch.std(next_layer, dim=0)), torch.min(torch.std(next_layer, dim=0)))
-    # next_layer /= torch.std(next_layer, dim=0)
+    weights = filters.weights.to(device=X.device)
+    next_layer = F.conv2d(X, weights)
     # n_filters, n_channels, width, height = filters.weights.shape
     # next_layer.shape -> (n_examples, n_filters, conv_height, conv_width)
     # next_layer = F.max_pool2d(next_layer, (2,2), ceil_mode=True)
@@ -260,3 +256,14 @@ class MultiLayersRandomFeatures:
         print('S', S.shape)
         print(torch.max(S), torch.min(S))
         return S
+
+
+class BoostingRound(Step):
+    """
+    Class that stores information about the current boosting round like the the round number and the training and validation accuracies. Used by the CallbacksManagerIterator in the _QuadBoostAlgorithm.fit method.
+    """
+    def __init__(self, round_number=0):
+        super().__init__(step_number=round_number)
+        self.train_acc = None
+        self.valid_acc = None
+        self.risk = None
