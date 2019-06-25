@@ -253,8 +253,6 @@ class MultiLayersRandomFeatures:
                 X = advance_to_the_next_layer(X, filters[i - 1])
             S.append(tifa(X, filters[i]))
         S = torch.cat(S, dim=1)
-        print('S', S.shape)
-        print(torch.max(S), torch.min(S))
         return S
 
 
