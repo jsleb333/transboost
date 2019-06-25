@@ -23,7 +23,7 @@ class FiltersGenerator:
     Infinite generator of weights.
     """
     def __init__(self, filter_bank, filters_shape=(5, 5), margin=0,
-                 rotation=0, scale=0, shear=0, n_transforms=1):
+                 rotation=0, scale=0, shear=0, n_transforms=1, filters_preprocessing=None):
         """
         Args:
             filter_bank (tensor or array of shape (n_examples, n_channels, height, width)): Bank of images for filters
@@ -46,6 +46,8 @@ class FiltersGenerator:
 
             n_transforms (int, optional): Number of filters made from the same image (at the same position) but with a
             different random transformation applied each time.
+
+            filters_preprocessing (list of callables or None): Callables to be applied on the weights of the filters. Each callable will receive weights and should return preprocessed weights in order.
         """
         self.filters_shape = filters_shape
         self.filter_bank = filter_bank
@@ -55,6 +57,7 @@ class FiltersGenerator:
                                                          shear_x=shear, shear_y=shear,
                                                          angle_unit='degrees')
         self.n_transforms = n_transforms
+        self.filters_preprocessing = filters_preprocessing or []
 
     @property
     def filter_bank(self):
@@ -77,6 +80,8 @@ class FiltersGenerator:
         weights, pos = [], []
         for example in examples:
             weight, p = self._generate_filter(example)
+            for preprocessing in self.filters_preprocessing:
+                weight = preprocessing(weight)
             weights.append(torch.unsqueeze(weight, dim=0))
             pos.append(p)
         weights = torch.cat(weights, dim=0)
@@ -120,3 +125,19 @@ class FiltersGenerator:
         if len(data.shape) == 3:
             data = torch.unsqueeze(data, dim=1)
         return data
+
+
+def center_weight(weight):
+    mean = torch.mean(weight)
+    weight -= mean
+    return weight
+
+
+def normalize_weight(weight):
+    weight /= torch.norm(weight, p=2)
+    return weight
+
+
+def reduce_weight(weight):
+    weight /= torch.std(weight)
+    return weight
