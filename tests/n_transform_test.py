@@ -9,7 +9,7 @@ from transboost.datasets import MNISTDataset, get_train_valid_test_bank
 from transboost.transboost_v2 import TransBoost, advance_to_the_next_layer, \
     MultiLayersRandomFeatures, get_multi_layers_filters, WLRidge
 from transboost.utils import make_fig_axes, FiltersGenerator
-from graal_utils import Timer
+from graal_utils import Timer, timed
 
 
 (Xtr, Ytr), (X_val, Y_val), (Xts, Yts), filter_bank = get_train_valid_test_bank(
@@ -23,14 +23,18 @@ from graal_utils import Timer
     # device='cuda'
 )
 
-n_transformations = np.arange(5, 11, 5)
+n_transformations = np.arange(5, 16, 5)
+n_it = 3
 train_accuracies = []
 val_accuracies = []
 encoder = OneHotEncoder(Ytr)
 weak_learner = WLRidge(encoder=encoder)
 # encoded_Y, weights = encoder.encode_labels(Ytr)
 np.random.seed(101)
-n_it = 3
+# generate filters
+filters_generator = FiltersGenerator(filter_bank, filters_shape=(5, 5), rotation=15, scale=.1, shear=15, n_transforms=max(n_transformations), margin=2)
+filters = get_multi_layers_filters(filters_generator, [10])
+
 for nt in n_transformations:
     with Timer():
         print(f'Beginning calculations for {nt} transformations')
@@ -38,9 +42,6 @@ for nt in n_transformations:
         temp_val = []
         for i in range(n_it):
             print(f'iteration: {i}')
-            # generate filters
-            filters_generator = FiltersGenerator(filter_bank, filters_shape=(5, 5), rotation=15, scale=.1, shear=15, n_transforms=nt, margin=2)
-            filters = get_multi_layers_filters(filters_generator, [100])
             # generate attribute and train weak learner
 
             aggregation_mechanism = MultiLayersRandomFeatures(locality=3, maxpool_shape=(-1,-1,-1))
