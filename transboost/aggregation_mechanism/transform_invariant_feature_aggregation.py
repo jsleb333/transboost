@@ -79,7 +79,7 @@ class TransformInvariantFeatureAggregation:
         j_max = min(j + weights.shape[-1] + self.locality + pad, width)
 
         if j_max - j_min < weights.shape[-1] or i_max - i_min < weights.shape[-2]:
-            raise ValueError(f"Filter shape of {(weights.shape[-2], weights.shape[-1])} too large.")
+            raise ValueError(f"Filter of shape {(weights.shape[-2], weights.shape[-1])} too large.")
 
         return X[:,:,i_min:i_max, j_min:j_max]
 
