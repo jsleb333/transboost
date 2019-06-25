@@ -1,2 +1,1 @@
-from .transboost_v2 import TransBoost
-
+from .transboost_v2 import TransBoost, MultiLayersRandomFeatures

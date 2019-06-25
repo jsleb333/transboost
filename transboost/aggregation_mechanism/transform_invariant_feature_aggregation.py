@@ -46,14 +46,15 @@ class TransformInvariantFeatureAggregation:
             self.n_transforms, *_ = transformed_weights.shape
             transformed_weights = transformed_weights.to(device=X.device)
 
-            ROI = self._get_region_of_interest(X, weights, *pos)
+            ROI = self._get_region_of_interest(X, weights, pad, *pos)
 
-            output = F.conv2d(ROI, transformed_weights, padding=pad)
+            output = F.conv2d(ROI, transformed_weights)
             # output.shape = (n_examples, n_transforms, height, array)
             if self.maxpool_shape:
                 output = torch.unsqueeze(output, dim=1)
                 # output.shape = (n_examples, 1, n_transforms, height, array)
                 self._compute_maxpool_shape(output)
+                print('maxpool_shape', self.maxpool_shape)
                 output = F.max_pool3d(output, self.maxpool_shape, ceil_mode=True)
 
             high_level_features.append(output.reshape(n_examples, -1))
@@ -70,12 +71,12 @@ class TransformInvariantFeatureAggregation:
         pad = int(np.ceil(filter_width * PAD_FACTOR))
         return pad
 
-    def _get_region_of_interest(self, X, weights, i, j):
+    def _get_region_of_interest(self, X, weights, pad, i, j):
         n_examples, n_channels, height, width = X.shape
-        i_min = max(i - self.locality, 0)
-        j_min = max(j - self.locality, 0)
-        i_max = min(i + weights.shape[-2] + self.locality, height)
-        j_max = min(j + weights.shape[-1] + self.locality, width)
+        i_min = max(i - self.locality - pad, 0)
+        j_min = max(j - self.locality - pad, 0)
+        i_max = min(i + weights.shape[-2] + self.locality + pad, height)
+        j_max = min(j + weights.shape[-1] + self.locality + pad, width)
 
         if j_max - j_min < weights.shape[-1] or i_max - i_min < weights.shape[-2]:
             raise ValueError(f"Filter shape of {(weights.shape[-2], weights.shape[-1])} too large.")
