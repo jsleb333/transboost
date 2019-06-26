@@ -24,13 +24,13 @@ ex.logger = logger
 
 @ex.config
 def my_config():
-    min_number_of_iterations = 25
+    min_number_of_iterations = 30
     minim = 0
-    maxim = 100
+    maxim = 101
     step = 5
     criterion = 0.0001
-    m = 10000
-    val = 1000
+    m = 10_000
+    val = 10_000
     dataset = 'mnist'
     center = True
     reduce = True
