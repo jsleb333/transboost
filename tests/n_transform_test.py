@@ -44,7 +44,7 @@ def my_config():
     shear = 15
     margin = 2
     maxpool = (-1, -1, -1)
-    device = 'cpu'
+    device = 'cuda'
     seed = True
 
 
