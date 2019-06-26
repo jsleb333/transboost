@@ -1,4 +1,4 @@
-from transboost.aggregation_mechanism.affine_transform import RandomAffineSampler
+from transboost.aggregation_mechanism.affine_transform import RandomAffineSampler, AffineTransform
 import numpy as np
 import torch
 
