@@ -54,7 +54,6 @@ class TransformInvariantFeatureAggregation:
                 output = torch.unsqueeze(output, dim=1)
                 # output.shape = (n_examples, 1, n_transforms, height, array)
                 self._compute_maxpool_shape(output)
-                print('maxpool_shape', self.maxpool_shape)
                 output = F.max_pool3d(output, self.maxpool_shape, ceil_mode=True)
 
             high_level_features.append(output.reshape(n_examples, -1))
