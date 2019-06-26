@@ -25,7 +25,7 @@ ex.logger = logger
 @ex.config
 def my_config():
     min_number_of_iterations = 50
-    minim = 0
+    minim = 5
     maxim = 100
     step = 5
     criterion = 0.0001
@@ -43,8 +43,7 @@ def my_config():
     scale = .1
     shear = 15
     margin = 2
-    nt = 40
-    maxpool = (-1, -1)
+    maxpool = (-1, -1, -1)
     device = 'cuda'
     seed = True
 
@@ -85,26 +84,21 @@ def run(min_number_of_iterations, minim, maxim, step, criterion, m, val, dataset
                 while delta > criterion:
                     print(f'iteration: {i}')
                     # generate filters
-                    if nt:
-                        for f in filters:
-                            affine_transforms = filters_generator._generate_affine_transforms(f.weights, f.pos, nt)
-                            f.affine_transforms = affine_transforms
-                    else:
-                        for f in filters:
-                            affine_transforms = filters_generator._generate_affine_transforms(f.weights, f.pos, nt)
-                            f.affine_transforms = affine_transforms
+                    for f in filters:
+                        affine_transforms = filters_generator._generate_affine_transforms(f.weights, f.pos, nt)
+                        f.affine_transforms = affine_transforms
                     filters = get_multi_layers_filters(filters_generator, n_filters_per_layer)
                     # generate attribute and train weak learner
                     S_tr = aggregation_mechanism(Xtr, filters)
                     weak_predictor = weak_learner().fit(S_tr, Ytr)
                     # calculate train accuracy
                     weak_prediction = weak_predictor.predict(S_tr)
-                    train_acc = weak_predictor.evaluate(Xtr, Ytr)
+                    train_acc = weak_predictor.evaluate(S_tr, Ytr)
                     temp_tr.append(train_acc)
                     # calculate validation accuracy
                     S_val = aggregation_mechanism(X_val, filters)
                     weak_prediction = weak_predictor.predict(S_val)
-                    train_acc = weak_predictor.evaluate(X_val, Y_val)
+                    val_acc = weak_predictor.evaluate(S_val, Y_val)
                     temp_val.append(val_acc)
                     if i >= min_number_of_iterations:
                         delta = np.mean(temp_val) - val_acc
