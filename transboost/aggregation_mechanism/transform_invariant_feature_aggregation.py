@@ -49,7 +49,6 @@ class TransformInvariantFeatureAggregation:
             ROI = self._get_region_of_interest(X, weights, pad, *pos)
 
             output = F.conv2d(ROI, transformed_weights)
-            print('output shape', output.shape)
             # output.shape = (n_examples, n_transforms, height, width)
             if self.maxpool_shape:
                 output = torch.unsqueeze(output, dim=1)
@@ -58,7 +57,6 @@ class TransformInvariantFeatureAggregation:
                 output = F.max_pool3d(output, maxpool_shape, ceil_mode=True)
 
             high_level_features.append(output.reshape(n_examples, -1))
-            print(high_level_features[-1].shape, self.maxpool_shape)
 
         high_level_features = torch.cat(high_level_features, dim=1)
         if self.activation:
