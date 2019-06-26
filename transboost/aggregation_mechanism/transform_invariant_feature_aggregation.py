@@ -53,8 +53,8 @@ class TransformInvariantFeatureAggregation:
             if self.maxpool_shape:
                 output = torch.unsqueeze(output, dim=1)
                 # output.shape = (n_examples, 1, n_transforms, height, width)
-                self._compute_maxpool_shape(output)
-                output = F.max_pool3d(output, self.maxpool_shape, ceil_mode=True)
+                maxpool_shape = self._compute_maxpool_shape(output)
+                output = F.max_pool3d(output, maxpool_shape, ceil_mode=True)
 
             high_level_features.append(output.reshape(n_examples, -1))
 
@@ -96,9 +96,13 @@ class TransformInvariantFeatureAggregation:
         return torch.cat(transformed_weights, dim=0)
 
     def _compute_maxpool_shape(self, output):
-        if self.maxpool_shape[0] == -1:
-            self.maxpool_shape[0] = self.n_transforms
-        if self.maxpool_shape[1] == -1:
-            self.maxpool_shape[1] = output.shape[-2]
-        if self.maxpool_shape[2] == -1:
-            self.maxpool_shape[2] = output.shape[-1]
+        maxpool_shape = [i for i in self.maxpool_shape]
+
+        if maxpool_shape[0] == -1:
+            maxpool_shape[0] = self.n_transforms
+        if maxpool_shape[1] == -1:
+            maxpool_shape[1] = output.shape[-2]
+        if maxpool_shape[2] == -1:
+            maxpool_shape[2] = output.shape[-1]
+
+        return maxpool_shape
