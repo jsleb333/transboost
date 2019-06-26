@@ -21,7 +21,7 @@ np.random.seed(101)
     reduce=True,
     shuffle=True,
     n_examples=11_000,
-    bank_ratio=1000,
+    bank_ratio=1/11,
     device='cuda'
 )
 
