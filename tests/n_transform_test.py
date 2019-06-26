@@ -26,6 +26,10 @@ np.random.seed(101)
     device='cpu'
 )
 
+print(f'Training on {Xtr.shape[0]} examples and testing on {X_val.shape[0]} examples')
+print(f'Bank size: {filter_bank.shape[0]}')
+print(f'Using GPU: {Xtr.is_cuda}')
+
 n_transformations = np.arange(0, 151, 5)
 n_it = 30
 n_filters = 100
