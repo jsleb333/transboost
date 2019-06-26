@@ -25,7 +25,7 @@ ex.logger = logger
 @ex.config
 def my_config():
     min_number_of_iterations = 50
-    minim = 5
+    minim = 0
     maxim = 100
     step = 5
     criterion = 0.0001
@@ -51,13 +51,26 @@ def my_config():
 
 @ex.automain
 def run(min_number_of_iterations, minim, maxim, step, criterion, m, val, dataset, center, reduce, fs, n_filters_per_layer, bank_ratio, loc, rot, scale, shear, margin, maxpool, device, seed, _run):
+    # prepare data
+    (Xtr, Ytr), (X_val, Y_val), (Xts, Yts), filter_bank = get_train_valid_test_bank(
+        dataset=dataset,
+        valid=val,
+        center=center,
+        reduce=reduce,
+        shuffle=seed,
+        n_examples=m,
+        bank_ratio=bank_ratio,
+        device=device
+    )
+    encoder = OneHotEncoder(Ytr)
+
     with open('n_transforms.csv', 'w', newline='') as csvfile:
         writer = csv.writer(csvfile, delimiter=',')
         aggregation_mechanism = MultiLayersRandomFeatures(loc, maxpool, None)
         amount_of_transformations = list(range(minim, maxim+step, step))
         train_accuracies = list()
         val_accuracies = list()
-        weak_learner = WLRidge
+        weak_learner = WLRidge(encoder=encoder)
         writer.writerow(['nt', 'train_acc', 'test_acc'])
         for nt in amount_of_transformations:
             with Timer():
@@ -68,35 +81,23 @@ def run(min_number_of_iterations, minim, maxim, step, criterion, m, val, dataset
                 i = 0
                 while delta > criterion:
                     print(f'iteration: {i}')
-                    # prepare data
-                    (Xtr, Ytr), (X_val, Y_val), (Xts, Yts), filter_bank = get_train_valid_test_bank(
-                        dataset=dataset,
-                        valid=val,
-                        center=center,
-                        reduce=reduce,
-                        shuffle=seed,
-                        n_examples=m,
-                        bank_ratio=bank_ratio,
-                        device=device
-                    )
-                    encoder = OneHotEncoder(Ytr)
-                    encoded_Y, weights = encoder.encode_labels(Ytr)
                     # generate filters
-                    filters_generator = FiltersGenerator(filter_bank, filters_shape=fs, rotation=rot, scale=scale, shear=shear, n_transforms=nt, margin=margin)
+                    if nt:
+                        filters_generator = FiltersGenerator(filter_bank, filters_shape=fs, rotation=rot, scale=scale, shear=shear, n_transforms=nt, margin=margin)
+                    else:
+                        filters_generator = FiltersGenerator(filter_bank, filters_shape=fs, rotation=0, scale=0, shear=0, n_transforms=1, margin=margin)
                     filters = get_multi_layers_filters(filters_generator, n_filters_per_layer)
                     # generate attribute and train weak learner
                     S_tr = aggregation_mechanism(Xtr, filters)
-                    weak_predictor = weak_learner().fit(S_tr, encoded_Y, weights)
+                    weak_predictor = weak_learner().fit(S_tr, Ytr)
                     # calculate train accuracy
                     weak_prediction = weak_predictor.predict(S_tr)
-                    Y_pred = encoder.decode_labels(weak_prediction)
-                    train_acc = accuracy_score(y_true=Ytr, y_pred=Y_pred)
+                    train_acc = weak_predictor.evaluate(Xtr, Ytr)
                     temp_tr.append(train_acc)
                     # calculate validation accuracy
                     S_val = aggregation_mechanism(X_val, filters)
-                    weak_prediction_val = weak_predictor.predict(S_val)
-                    Y_val_pred = encoder.decode_labels(weak_prediction_val)
-                    val_acc = accuracy_score(y_true=Y_val, y_pred=Y_val_pred)
+                    weak_prediction = weak_predictor.predict(S_val)
+                    train_acc = weak_predictor.evaluate(X_val, Y_val)
                     temp_val.append(val_acc)
                     if i >= min_number_of_iterations:
                         delta = np.mean(temp_val) - val_acc
