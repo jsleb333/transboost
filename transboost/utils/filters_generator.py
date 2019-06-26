@@ -1,4 +1,4 @@
-from transboost.aggregation_mechanism.affine_transform import RandomAffineSampler
+from transboost.aggregation_mechanism.affine_transform import RandomAffineSampler, AffineTransform
 import numpy as np
 import torch
 
@@ -110,7 +110,7 @@ class FiltersGenerator:
                     [
                         AffineTransform()
                         for _ in range(n_channels)]
-                    for _ in range(n_transforms)]
+                    ]
                 for pos in filters_pos]
         else:
             affine_transforms = [

@@ -17,17 +17,17 @@ np.random.seed(101)
 
 (Xtr, Ytr), (X_val, Y_val), (Xts, Yts), filter_bank = get_train_valid_test_bank(
     dataset='mnist',
-    valid=10_00,
+    valid=10_000,
     center=True,
     reduce=True,
     shuffle=True,
     n_examples=11_000,
     bank_ratio=1/11,
-    device='cuda'
+    device='cpu'
 )
 
-n_transformations = np.arange(5, 150, 5)
-n_it = 25
+n_transformations = np.arange(0, 151, 5)
+n_it = 30
 n_filters = 100
 train_accuracies, val_accuracies = [], []
 train_partial_means, val_partial_means = [], []
