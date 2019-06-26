@@ -1,3 +1,4 @@
+import os
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -66,12 +67,14 @@ for nt in n_transformations:
         val_partial_means.append([np.mean(temp_val[:i+1]) for i, _ in enumerate(temp_val)])
 
 # save the data
+os.makedirs('./results/', exist_ok=True)
 filename_train = f'./results/n_transforms_effect-train_accuracies-nt={n_transformations[0]}_to_{n_transformations[-1]}-n_it={n_it}-nf={n_filters}.csv'
 with open(filename_train, 'w', newline='') as file:
     csv_writer = csv.writer(file)
     csv_writer.writerow(['nt'] + [it for it in range(n_it)])
     for i, nt in enumerate(n_transformations):
         csv_writer.writerow([nt] + train_accuracies[i])
+os.makedirs('./results/', exist_ok=True)
 filename_val = f'./results/n_transforms_effect-val_accuracies-nt={n_transformations[0]}_to_{n_transformations[-1]}-n_it={n_it}-nf={n_filters}.csv'
 with open(filename_val, 'w', newline='') as file:
     csv_writer = csv.writer(file)
