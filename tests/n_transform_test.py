@@ -16,26 +16,26 @@ from graal_utils import Timer
 
 ex = Experiment('n_transforms test')
 
-# ex.observers.append(MongoObserver.create(url='mongodb://mongo_user:mongo_password@127.0.0.1:27017',
-                                        #  db_name='sacred'))
+ex.observers.append(MongoObserver.create(url='mongodb://mongo_user:mongo_password@127.0.0.1:27017',
+                                          db_name='sacred'))
 logger = logging.getLogger()
 logger.propagate = False
 ex.logger = logger
 
 @ex.config
 def my_config():
-    min_number_of_iterations = 50
-    minim = 5
+    min_number_of_iterations = 25
+    minim = 0
     maxim = 100
     step = 5
     criterion = 0.0001
-    m = 1000
+    m = 10000
     val = 1000
     dataset = 'mnist'
     center = True
     reduce = True
     fs = (5,5)
-    n_filters_per_layer = [5]
+    n_filters_per_layer = [100]
     bank_ratio = .05
     fn = 'c'
     loc = 3
@@ -44,7 +44,7 @@ def my_config():
     shear = 15
     margin = 2
     maxpool = (-1, -1, -1)
-    device = 'cpu'
+    device = 'cuda'
     seed = True
 
 
