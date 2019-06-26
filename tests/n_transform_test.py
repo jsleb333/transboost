@@ -63,6 +63,9 @@ def run(min_number_of_iterations, minim, maxim, step, criterion, m, val, dataset
         device=device
     )
     encoder = OneHotEncoder(Ytr)
+    filters_generator = FiltersGenerator(filter_bank, filters_shape=fs, rotation=rot, scale=scale,
+                                         shear=shear, n_transforms=maxim, margin=margin)
+    filters = get_multi_layers_filters(filters_generator, n_filters_per_layer)
 
     with open('n_transforms.csv', 'w', newline='') as csvfile:
         writer = csv.writer(csvfile, delimiter=',')
@@ -83,9 +86,13 @@ def run(min_number_of_iterations, minim, maxim, step, criterion, m, val, dataset
                     print(f'iteration: {i}')
                     # generate filters
                     if nt:
-                        filters_generator = FiltersGenerator(filter_bank, filters_shape=fs, rotation=rot, scale=scale, shear=shear, n_transforms=nt, margin=margin)
+                        for f in filters:
+                            affine_transforms = filters_generator._generate_affine_transforms(f.weights, f.pos, nt)
+                            f.affine_transforms = affine_transforms
                     else:
-                        filters_generator = FiltersGenerator(filter_bank, filters_shape=fs, rotation=0, scale=0, shear=0, n_transforms=1, margin=margin)
+                        for f in filters:
+                            affine_transforms = filters_generator._generate_affine_transforms(f.weights, f.pos, nt)
+                            f.affine_transforms = affine_transforms
                     filters = get_multi_layers_filters(filters_generator, n_filters_per_layer)
                     # generate attribute and train weak learner
                     S_tr = aggregation_mechanism(Xtr, filters)
