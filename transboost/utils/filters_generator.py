@@ -110,7 +110,7 @@ class FiltersGenerator:
                     [
                         AffineTransform()
                         for _ in range(n_channels)]
-                    for _ in range(n_transforms)]
+                    ]
                 for pos in filters_pos]
         else:
             affine_transforms = [
