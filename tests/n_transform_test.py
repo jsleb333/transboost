@@ -23,7 +23,7 @@ np.random.seed(101)
     shuffle=True,
     n_examples=11_000,
     bank_ratio=1/11,
-    device='cpu'
+    device='cuda'
 )
 
 print(f'Training on {Xtr.shape[0]} examples and testing on {X_val.shape[0]} examples')
