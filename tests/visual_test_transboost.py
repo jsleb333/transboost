@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from transboost.datasets import MNISTDataset
-from transboost.transboost_v2 import TransBoost, advance_to_the_next_layer, get_multi_layers_random_features, get_multi_layers_filters
+from transboost.transboost_v2 import TransBoost, advance_to_the_next_layer, MultiLayersRandomFeatures, get_multi_layers_filters
 from transboost.utils import make_fig_axes, FiltersGenerator, center_weight, reduce_weight
 from sklearn.preprocessing import StandardScaler
 
@@ -17,7 +17,7 @@ Xtr = torch.unsqueeze(torch.from_numpy(Xtr), dim=1)
 x, y = Xtr, Ytr
 eights = [i for i, yy in enumerate(y) if yy == 8]
 print(eights)
-x_idx = 15
+x_idx = 0
 n_filters = 5
 filters_shape = (5,5)
 n_layers = 4
@@ -42,9 +42,9 @@ mlf = get_multi_layers_filters(filters_generator, [n_filters]*n_layers)
 filters_layer_0 = mlf[0]
 
 new_x = advance_to_the_next_layer(x, filters_layer_0)
-new_x = torch.from_numpy(StandardScaler().fit_transform(new_x.reshape(1000,-1)).reshape(new_x.shape))
+# new_x = torch.from_numpy(StandardScaler().fit_transform(new_x.reshape(1000,-1)).reshape(new_x.shape))
 new_x = torch.relu(new_x)
-new_x = torch.from_numpy(StandardScaler().fit_transform(new_x.reshape(1000,-1)).reshape(new_x.shape))
+# new_x = torch.from_numpy(StandardScaler().fit_transform(new_x.reshape(1000,-1)).reshape(new_x.shape))
 
 ax[(n_filters-1)//2][0].imshow(x[x_idx,0], cmap='RdBu_r')
 
@@ -55,9 +55,9 @@ for i in range(n_filters):
 # Other layers
 for l, filters in enumerate(mlf[1:]):
     new_x = advance_to_the_next_layer(new_x, filters)
-    new_x = torch.from_numpy(StandardScaler().fit_transform(new_x.reshape(1000,-1)).reshape(new_x.shape))
+    # new_x = torch.from_numpy(StandardScaler().fit_transform(new_x.reshape(1000,-1)).reshape(new_x.shape))
     new_x = torch.relu(new_x)
-    new_x = torch.from_numpy(StandardScaler().fit_transform(new_x.reshape(1000,-1)).reshape(new_x.shape))
+    # new_x = torch.from_numpy(StandardScaler().fit_transform(new_x.reshape(1000,-1)).reshape(new_x.shape))
     for i in range(n_filters):
         for j in range(n_filters):
             ax[j][(n_filters+1)*l+3+i].imshow(filters.weights[j,i], cmap='RdBu_r')
