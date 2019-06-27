@@ -23,7 +23,7 @@ np.random.seed(101)
     shuffle=True,
     n_examples=11_000,
     bank_ratio=1/11,
-    device=torch.cuda.is_available()
+    device='cuda' if torch.cuda.is_available() else 'cpu'
 )
 
 print(f'Training on {Xtr.shape[0]} examples and testing on {X_val.shape[0]} examples')
