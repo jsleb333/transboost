@@ -15,7 +15,8 @@ class Filters:
         """
         weights = self.weights[item]
         pos = self.pos[item]
-        return Filters(weights, pos)
+        affine_transform = self.affine_transforms[item]
+        return Filters(weights, pos, affine_transform)
 
 
 class FiltersGenerator:
@@ -102,8 +103,7 @@ class FiltersGenerator:
 
     def _generate_affine_transforms(self, filters_weights, filters_pos, n_transforms):
         n_filters, n_channels, height, width = filters_weights.shape
-        center = lambda top_left_corner: (top_left_corner[0] + (height - 1) / 2,
-                                          top_left_corner[1] + (width - 1) / 2)
+        center = ((height - 1) / 2, (width - 1) / 2)
         if not n_transforms:
             affine_transforms = [
                 [
@@ -116,7 +116,7 @@ class FiltersGenerator:
             affine_transforms = [
                 [
                     [
-                        self.random_affine_sampler.sample_transformation(center(pos))
+                        self.random_affine_sampler.sample_transformation(center)
                         for _ in range(n_channels)]
                     for _ in range(n_transforms)]
                 for pos in filters_pos]
