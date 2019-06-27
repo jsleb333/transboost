@@ -38,7 +38,7 @@ train_partial_means, val_partial_means = [], []
 encoder = OneHotEncoder(Ytr)
 weak_learner = WLRidge(encoder=encoder)
 # generate filters
-filters_generator = FiltersGenerator(filter_bank, filters_shape=(5, 5), rotation=15, scale=.1, shear=15, n_transforms=max(n_transformations), margin=2)
+filters_generator = FiltersGenerator(filter_bank, filters_shape=(11, 11), rotation=15, scale=.1, shear=15, n_transforms=min(n_transformations), margin=2)
 filters = get_multi_layers_filters(filters_generator, [n_filters])
 
 for nt in n_transformations:
