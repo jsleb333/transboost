@@ -7,9 +7,9 @@ from transboost.transboost_v2 import *
 from transboost.datasets import get_train_valid_test_bank
 from transboost.utils import FiltersGenerator
 
-(Xtr, Ytr), (Xts, Yts), _, filter_bank = get_train_valid_test_bank()
+(Xtr, Ytr), (Xts, Yts), _, filter_bank = get_train_valid_test_bank(center=True, reduce=True)
 
-fg = FiltersGenerator(filter_bank, margin=4, rotation=10, scale=.1, shear=10, n_transforms=5)
+fg = FiltersGenerator(filter_bank, margin=4, rotation=15, scale=.1, shear=15, n_transforms=5)
 bank = fg.draw_n_examples_from_bank(3)
 filters = fg.generate_filters(bank)
 

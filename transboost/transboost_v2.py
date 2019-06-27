@@ -210,6 +210,17 @@ def advance_to_the_next_layer(X, filters):
         torch.cuda.empty_cache()
     weights = filters.weights.to(device=X.device)
     next_layer = F.conv2d(X, weights)
+    next_layer -= torch.mean(next_layer, dim=0)
+    std = torch.std(next_layer, dim=0)
+    s = std <= 10e-4
+    for i in range(std.shape[0]):
+        for j in range(std.shape[1]):
+            for k in range(std.shape[2]):
+                if s[i,j,k]:
+                    print(i,j,k, next_layer[0,i,j,k], X[0,0,j,k])
+                    print(X[0,0,j:j+5,k:k+5])
+    # m = torch.mean(next_layer, dim=0)
+    # print(m.shape)
     # n_filters, n_channels, width, height = filters.weights.shape
     # next_layer.shape -> (n_examples, n_filters, conv_height, conv_width)
     # next_layer = F.max_pool2d(next_layer, (2,2), ceil_mode=True)
