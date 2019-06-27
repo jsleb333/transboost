@@ -21,8 +21,8 @@ def my_config():
     wl = 'ridge'
     fs = 11
     fsh = 0
-    n_layers = 1
-    n_filters_per_layer = [200]
+    n_layers = 3
+    n_filters_per_layer = [30]
     bank_ratio = .05
     fn = 'c'
     loc = 3
