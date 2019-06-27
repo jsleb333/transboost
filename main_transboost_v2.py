@@ -12,7 +12,7 @@ from graal_utils import timed
 
 @timed
 @parse
-def main(m=60_000, val=10_000, dataset='mnist', center=True, reduce=True,
+def main(m=100, val=10, dataset='mnist', center=True, reduce=True,
          encodings='onehot', wl='ridge',
          fs=5, fsh=0, n_layers=2, n_filters_per_layer=[10],
          bank_ratio=.05, fn='c',
