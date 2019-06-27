@@ -210,15 +210,14 @@ def advance_to_the_next_layer(X, filters):
         torch.cuda.empty_cache()
     weights = filters.weights.to(device=X.device)
     next_layer = F.conv2d(X, weights)
+    a = torch.mean(next_layer, dim=0)
     next_layer -= torch.mean(next_layer, dim=0)
-    std = torch.std(next_layer, dim=0)
-    s = std <= 10e-4
-    for i in range(std.shape[0]):
-        for j in range(std.shape[1]):
-            for k in range(std.shape[2]):
-                if s[i,j,k]:
-                    print(i,j,k, next_layer[0,i,j,k], X[0,0,j,k])
-                    print(X[0,0,j:j+5,k:k+5])
+    max = torch.unsqueeze(torch.max(next_layer, dim=0)[0], dim=0)
+    abs_min =torch.unsqueeze(torch.abs(torch.min(next_layer, dim=0)[0]), dim=0)
+    scale = torch.max(torch.cat((max, abs_min), dim=0), dim = 0)[0]
+    scale = torch.where(scale <= 1, torch.ones_like(scale), scale)
+
+    next_layer /= scale
     # m = torch.mean(next_layer, dim=0)
     # print(m.shape)
     # n_filters, n_channels, width, height = filters.weights.shape

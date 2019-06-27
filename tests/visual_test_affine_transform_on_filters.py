@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
+from transboost.datasets import MNISTDataset
 from transboost.aggregation_mechanism import TransformInvariantFeatureAggregation
 from transboost.transboost_v2 import *
 from transboost.datasets import get_train_valid_test_bank
