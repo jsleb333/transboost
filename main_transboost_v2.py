@@ -19,7 +19,7 @@ def main(m=100, val=10, dataset='mnist', center=True, reduce=True,
          loc=3, rot=0, scale=.0, shear=0, margin=2, nt=1,
          nl='maxpool', maxpool=-1,
          max_round=1000, patience=1000, resume=0,
-         device='cpu', seed=101, smc=None, run_info = None
+         device='cpu', seed=101, smc=None, run_info=None
          ):
 
     # Seed
