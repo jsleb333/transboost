@@ -158,4 +158,4 @@ def main(m=60_000, val=0, dataset='mnist', center=True, reduce=True,
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, style='{', format='[{levelname}] {message}')
-    main(m=1000, val=20, fn='c', n_layers=2)
+    # main(m=1000, val=20, fn='c', n_layers=2)
