@@ -12,14 +12,15 @@ from graal_utils import timed
 
 @timed
 @parse
-def main(m=100, val=10, dataset='mnist', center=True, reduce=True,
+def main(m=60_000, val=0, dataset='mnist', center=True, reduce=True,
          encodings='onehot', wl='ridge',
-         fs=5, fsh=0, n_layers=2, n_filters_per_layer=[10],
+         fs=11, fsh=0, n_layers=2, n_filters_per_layer=[10],
          bank_ratio=.05, fn='c',
-         loc=3, rot=0, scale=.0, shear=0, margin=2, nt=1,
+         loc=3, rot=15, scale=.1, shear=15, margin=2, nt=40,
          nl='maxpool', maxpool=-1,
          max_round=1000, patience=1000, resume=0,
-         device='cpu', seed=101, smc=None, run_info=None
+         device='cuda' if torch.cuda.is_available() else 'cpu',
+         seed=101, smc=None, run_info=None
          ):
 
     # Seed
