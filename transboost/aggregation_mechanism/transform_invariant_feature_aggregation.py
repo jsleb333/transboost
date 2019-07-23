@@ -65,12 +65,25 @@ class TransformInvariantFeatureAggregation:
         return high_level_features
 
     def _compute_padding(self, weights):
+        """
+        :param weights: (Array or Tensor of shape (n_examples, n_channels, height, width)): Weights to use for exreaction
+        :return: (int): the padding to use for trasforming the weight
+        """
         filter_width = weights.shape[-1]
         PAD_FACTOR = (np.sqrt(2)-1)/2# Minimum factor to pad to not loose any pixels when rotating by π/4 a square filter.
         pad = int(np.ceil(filter_width * PAD_FACTOR))
         return pad
 
     def _get_region_of_interest(self, X, weights, pad, i, j):
+        """
+        return the region of interest on the examples on which to extract information
+        :param X: X (Array or Tensor of shape (n_examples, n_channels, height, width)): Examples to extract high level features from.
+        :param weights: Array or Tensor of shape ( n_channels, height, width)): Weights to use for extraction
+        :param pad: padding
+        :param i: x position of the filter
+        :param j: y position of the filter
+        :return: X (Array or Tensor of shape (n_examples, n_channels, height, width)): Examples cropped around the region of interest
+        """
         n_examples, n_channels, height, width = X.shape
         i_min = max(i - self.locality - pad, 0)
         j_min = max(j - self.locality - pad, 0)
@@ -83,6 +96,13 @@ class TransformInvariantFeatureAggregation:
         return X[:,:,i_min:i_max, j_min:j_max]
 
     def _transform_weights(self, weights, affine_transforms, pad):
+        """
+        Apply the affine transform to the weights
+        :param weights: Array or Tensor of shape ( n_channels, height, width)): Weights to use for extraction
+        :param affine_transforms: Iterable of AffineTransform object of shape (n_transform, n_channel)
+        :param pad: padding
+        :return: transformed weights Array or Tensor of shape ( n_transform, n_channels, height, width)): Weights to use for extraction
+        """
         transformed_weights = []
         for affine_transforms_ch in affine_transforms:
             transformed_chs = []
@@ -97,6 +117,10 @@ class TransformInvariantFeatureAggregation:
         return torch.cat(transformed_weights, dim=0)
 
     def _compute_maxpool_shape(self, output):
+        """
+        :param output: Array or Tensor of shape (n_transform n_channels, height, width)): result of the convolution
+        :return: maxpool_shape
+        """
         maxpool_shape = [i for i in self.maxpool_shape]
 
         if maxpool_shape[0] == -1:

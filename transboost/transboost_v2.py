@@ -106,6 +106,9 @@ class TransBoost:
         return self
 
     def _fit(self, X, Y, residue, weights, X_val, Y_val, **weak_learner_fit_kwargs):
+        """
+        functions that fit fits the model to the data. Should not be used as is but wrapped in the fit function
+        """
         encoded_Y_pred = self.predict_encoded(X)
         encoded_Y_val_pred = self.predict_encoded(X_val) if X_val is not None else None
 
@@ -120,9 +123,21 @@ class TransBoost:
         algo.fit(self.weak_predictors, self.filters, **weak_learner_fit_kwargs)
 
     def predict(self, X, mode='best'):
+        """
+        predict the labels of the examples X
+        :param X: examples
+        :param mode: 'best' will only use the weights used by the best round and 'last' will use all the weights
+        :return: (Tensor) decoded labels
+        """
         return self.encoder.decode_labels(self.predict_encoded(X, mode))
 
     def predict_encoded(self, X, mode='last'):
+        """
+        predict the encoded labels f the examples X
+        :param X: (Tensor) examples
+        :param mode: 'best' will only use the weights used by the best round and 'last' will use all the weights
+        :return: (Iterable) encoded labels
+        """
         encoded_Y_pred = np.zeros((X.shape[0], self.encoder.encoding_dim)) + self.f0
 
         if mode == 'best':
@@ -138,6 +153,14 @@ class TransBoost:
         return encoded_Y_pred
 
     def evaluate(self, X, Y, return_risk=False, mode='best'):
+        """
+        evaluate the accuracy of the trained algorithm
+        :param X: examples to predict
+        :param Y: labels
+        :param return_risk: if True, the function will also calculate the quadratic risk of this prediction
+        :param mode: 'best' will only use the weights used by the best round and 'last' will use all the weights
+        :return: acccuracy (double) or (accuracy, risk)
+        """
         encoded_Y_pred = self.predict_encoded(X, mode)
         Y_pred = self.encoder.decode_labels(encoded_Y_pred)
 
@@ -151,6 +174,9 @@ class TransBoost:
 
 
 class TransBoostAlgorithm:
+    """
+    This is an implementation of the TransBoost algorithm. It is intended to be used inside the TransBoost class API and not as is.
+    """
     def __init__(self, boost_manager, encoder, weak_learner, filters_generator,
                  aggregation_mechanism,
                  X, Y, residue, weights, encoded_Y_pred,
@@ -176,7 +202,7 @@ class TransBoostAlgorithm:
 
         Args:
             weak_predictors (list): Reference to the list of weak_predictors of the model.
-            filters (Filters object): Filters used in the aggregation mechanism.
+            filters (list of Filters object): Filters used in the aggregation mechanism.
             weak_learner_fit_kwargs: Keyword arguments needed to fit the weak learner.
 
         Returns None.
@@ -193,6 +219,18 @@ class TransBoostAlgorithm:
                 self._evaluate_round(boosting_round, weak_prediction, weak_predictor, this_round_filters)
 
     def _evaluate_round(self, boosting_round, weak_prediction, weak_predictor, filters):
+        """
+        Compute the metrics for the current boosting round
+        Appends the weak_predictors and weak_predictors_weights lists with the fitted weak learners.
+
+        Args:
+            boosting round (BoostingRound Object): Object use to store information on the metrics
+            weak_prediction (List): Reference to the predictions
+            weak_predictor(WeakLearner Object): Reference to the trained weak learner for the current round
+            filters(Filters Object) : filters used to get the multlayers attribute for this round
+
+        Returns None.
+        """
         self.encoded_Y_pred += weak_prediction
         Y_pred = self.encoder.decode_labels(self.encoded_Y_pred)
         boosting_round.train_acc = accuracy_score(y_true=self.Y, y_pred=Y_pred)
@@ -206,6 +244,14 @@ class TransBoostAlgorithm:
 
 
 def advance_to_the_next_layer(X, filters):
+    """
+    Transform the examples by using convolution with filters. The
+    Args:
+        X (Array of shape (n_examples, ...)): Examples to advance to the next layers
+        filters (Filters object): Filters to be convoluted with the example
+
+    Returns the transformed examples (Tensor of shape (n_examples, n_filters, ...)).
+    """
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
     weights = filters.weights.to(device=X.device)
@@ -226,6 +272,17 @@ def advance_to_the_next_layer(X, filters):
 
 
 def get_multi_layers_filters(filters_generator: FiltersGenerator, n_filters_per_layer):
+    """
+    generate filters for each layers by convolving filters together:
+    filters of the second layers are obtaine by convolving filters of the first layer together
+    filters of the third layers are obtained by convolving filter of the second layer together
+
+    Args:
+        filters_generator (FiltersGenerator Object): Object that generate filters by drawing them in a bank of exameples and apply
+        n_filters_per_layer (Array)
+
+    Returns the filters  (Array of array of filter objects (one array per layer)).
+    """
     # filters_generator first contains the the examples from the original examples distributon
     # draw numbers representing the examples that will generate filters
     examples = filters_generator.draw_n_examples_from_bank(sum(n_filters_per_layer))
@@ -243,12 +300,24 @@ def get_multi_layers_filters(filters_generator: FiltersGenerator, n_filters_per_
 
 
 class MultiLayersRandomFeatures:
+    """
+    Class that can be initialized with hyperparameters that will be used if the feature aggregation mechanisms
+    This class can then be called to create the random features with the feature aggregation mechanism
+    """
     def __init__(self, locality=3, maxpool_shape=(3,3), activation=None):
         self.locality = locality
         self.maxpool_shape = maxpool_shape
         self.activation = activation
 
     def __call__(self, examples, filters):
+        """
+        generate random features by using the tifa to aggregate examples with filters
+        Args:
+            examples (Array of shape (n_examples, ...)): Examples to aggregate
+            filters (Array of array of filters object (one array per layer)): obtained with the method get_multi_layer_filters
+
+        Returns the multilayer random features  (Array of shape (sum(n_fiters_per_layers))).
+        """
         S = []
         tifa = Tifa(locality=self.locality,
                     maxpool_shape=self.maxpool_shape,

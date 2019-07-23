@@ -70,6 +70,9 @@ class FiltersGenerator:
         self.n_examples, n_channels, self.bank_height, self.bank_width = self._filter_bank.shape
 
     def draw_n_examples_from_bank(self, n_examples):
+        """
+        Choose randomly n examples from the example bank and return them in a tensor of size (n_examples x image_height x image_ width)
+        """
         examples = list()
         for i in range(n_examples):
             example = self.filter_bank[np.random.randint(self.n_examples)].clone().detach().cpu()
@@ -78,6 +81,9 @@ class FiltersGenerator:
         return torch.cat(examples, dim=0)
 
     def generate_filters(self, examples):
+        """
+        Generate A Filters object using the examples passed as arguments
+        """
         weights, pos = [], []
         for example in examples:
             weight, p = self._generate_filter(example)
@@ -91,6 +97,11 @@ class FiltersGenerator:
         return filters
 
     def _generate_filter(self, example):
+        """
+        Comute the weight of a filter based on the hyperparameters (set in the constructor) on the example passed as argument
+        Args: Example (Tensor)
+        Returns: (weight, position)
+        """
         # (i, j) is the top left corner where the filter position was taken
         height, width = self.filters_shape
         i_max = example.shape[1] - height
@@ -102,6 +113,13 @@ class FiltersGenerator:
         return x, (i, j)
 
     def _generate_affine_transforms(self, filters_weights, filters_pos, n_transforms):
+        """
+        Compute n_transforms affint transform matirx for each filter
+        Args: filters_weights (Tensor n_filters x  n_channels x filter_height x filter_ width)
+            filters_pos (List of Tuples (i,j))
+            n_transforms (int) number of affine transform to generaye
+        Returns: (Tensor of Affine Transform  n_filters x n_transforms x n_channels)
+        """
         n_filters, n_channels, height, width = filters_weights.shape
         center = ((height - 1) / 2, (width - 1) / 2)
         if not n_transforms:
@@ -136,16 +154,31 @@ class FiltersGenerator:
 
 
 def center_weight(weight):
+    """
+    Callable for filter preprocessing
+    :param weight: weight to center
+    :return: centered weight
+    """
     mean = torch.mean(weight)
     weight -= mean
     return weight
 
 
 def normalize_weight(weight):
+    """
+    Callable for filter preprocessing
+    :param weight: weight to normalize
+    :return: normalized weight
+    """
     weight /= torch.norm(weight, p=2)
     return weight
 
 
 def reduce_weight(weight):
+    """
+    Callable for filter preprocessing
+    :param weight: weight to reduce
+    :return: reduced weight
+    """
     weight /= torch.std(weight)
     return weight
