@@ -108,7 +108,7 @@ class TransformInvariantFeatureAggregation:
             transformed_chs = []
             for ch, affine_transform in zip(weights, affine_transforms_ch):
                 affine_transform.center += pad
-                transformed_ch = affine_transform(np.pad(ch, pad, 'constant')) / affine_transform.determinant
+                transformed_ch = affine_transform(np.pad(ch, pad, 'constant')) # / affine_transform.determinant
                 transformed_ch = torch.unsqueeze(torch.from_numpy(transformed_ch), dim=0)
                 transformed_chs.append(transformed_ch)
             transformed_chs = torch.unsqueeze(torch.cat(transformed_chs, dim=0), dim=0)
