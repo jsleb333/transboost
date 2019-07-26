@@ -18,7 +18,7 @@ def main(m=60_000, val=0, dataset='mnist', center=True, reduce=True,
          bank_ratio=.05, fn='c',
          loc=3, rot=15, scale=.1, shear=15, margin=2, nt=40,
          nl='maxpool', maxpool=-1,
-         max_round=1000, patience=1000, resume=0,
+         max_round=50, patience=1000, resume=0,
          device='cuda' if torch.cuda.is_available() else 'cpu',
          seed=101, smc=None, run_info=None
          ):
@@ -111,9 +111,11 @@ def main(m=60_000, val=0, dataset='mnist', center=True, reduce=True,
     ckpt = ModelCheckpoint(filename=filename+'-{round}.ckpt', dirname='./results')
     logger = CSVLogger(filename=filename+'-log.csv', dirname='./results/log')
     zero_risk = BreakOnZeroRiskCallback()
+    max_step = BreakOnMaxStepCallback(max_step_number=max_round)
     callbacks = [ckpt,
                 logger,
                 zero_risk,
+                 max_step
                 ]
     if smc is not None:
         callbacks.append(smc)

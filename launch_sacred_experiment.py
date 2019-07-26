@@ -19,10 +19,10 @@ def my_config():
     reduce = True
     encodings = 'onehot'
     wl = 'ridge'
-    fs = 11
+    fs = 5
     fsh = 0
-    n_layers = 2
-    n_filters_per_layer = [50]
+    n_layers = 1
+    n_filters_per_layer = [200]
     bank_ratio = .05
     fn = 'c'
     loc = 3
@@ -33,7 +33,7 @@ def my_config():
     nt = 40
     nl = 'maxpool'
     maxpool = -1
-    max_round = 1000
+    max_round = 50
     patience = 1000
     resume = 0
     device = 'cuda'
